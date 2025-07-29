@@ -1,10 +1,15 @@
 annotated-types==0.7.0
+black==24.4.2
 cffi==1.17.1
+click==8.2.1
 coverage==7.10.1
 cryptography==45.0.5
 iniconfig==2.1.0
+mypy_extensions==1.1.0
 mysql-connector-python==9.4.0
 packaging==25.0
+pathspec==0.12.1
+platformdirs==4.3.8
 pluggy==1.6.0
 pycparser==2.22
 pydantic==2.11.7
@@ -14,5 +19,6 @@ pytest==8.4.1
 pytest-cov==6.2.1
 pytest-mock==3.14.1
 python-dotenv==1.1.1
+ruff==0.4.4
 typing-inspection==0.4.1
 typing_extensions==4.14.1

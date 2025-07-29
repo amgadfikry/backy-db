@@ -21,6 +21,8 @@ setup(
             "black",
             "isort",
             "mypy",
+            "black==24.4.2",
+            "ruff==0.4.4",
         ],
         "test": [
             "pytest==8.4.1",
