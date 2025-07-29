@@ -10,6 +10,7 @@ class LocalStorage(StorageBase):
     This class provides methods to upload, download, and delete files
     in the local file system.
     """
+
     def upload(self) -> Path:
         """
         Move the folder of the processing contains the backups files and maybe the

@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 import shutil
 
+
 @pytest.fixture(scope="session", autouse=True)
 def configure_logging_path():
     """

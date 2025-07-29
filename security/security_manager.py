@@ -11,11 +11,11 @@ class SecurityManager(SecurityEngine):
     A composite class that combines security operations, encryption, decryption,
     and metadata handling.
     """
+
     def __init__(self, security_config: dict):
         super().__init__(security_config)
         self.config = security_config
         self.metadata_service = SecurityMetadata(self.config)
-
 
     def encryption(self) -> Path:
         """
@@ -36,12 +36,13 @@ class SecurityManager(SecurityEngine):
             self.metadata_service.copy_public_key()
             if self.integrity_check:
                 self.metadata_service.create_integrity_file()
-            print(f"Encryption completed, encrypted data and generated metadata, encryption key, and public key in: {self.processing_path}")
+            print(
+                f"Encryption completed, encrypted data and generated metadata, encryption key, and public key in: {self.processing_path}"
+            )
             return self.processing_path
         except Exception as e:
             print(f"Encryption failed: {e}")
             raise e
-    
 
     def decryption(self) -> Path:
         """
@@ -56,10 +57,14 @@ class SecurityManager(SecurityEngine):
             decryption_service = DecryptionService(self.config)
             if self.integrity_check:
                 if not self.metadata_service.verify_integrity():
-                    raise ValueError("Integrity check failed. The file may have been tampered with.")
+                    raise ValueError(
+                        "Integrity check failed. The file may have been tampered with."
+                    )
             symmetric_key = decryption_service.decrypt_symmetric_key()
             decrypted_data_path = decryption_service.decrypt_data(symmetric_key)
-            print(f"Decryption completed, decrypted file available at: {decrypted_data_path}")
+            print(
+                f"Decryption completed, decrypted file available at: {decrypted_data_path}"
+            )
             return decrypted_data_path
         except Exception as e:
             print(f"Decryption failed: {e}")

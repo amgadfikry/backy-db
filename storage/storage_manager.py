@@ -4,17 +4,17 @@ from logger.logger_manager import LoggerManager
 from pathlib import Path
 
 
-
 class StorageManager:
     """
     StorageManager orchestrates the storage operations for the Backy project.
     It initializes the storage configuration and provides methods to upload,
     download, and delete files in the specified storage.
     """
+
     STORAGES = {
-        'local': LocalStorage,
+        "local": LocalStorage,
     }
-    
+
     def __init__(self, config: dict):
         """
         Initialize the StorageManager with the given configuration.
@@ -22,7 +22,7 @@ class StorageManager:
             config (dict): The configuration dictionary containing storage details.
         """
         self.logger = LoggerManager.setup_logger("storage")
-        storage_type = config.get('storage_type', 'local').lower()
+        storage_type = config.get("storage_type", "local").lower()
         if storage_type not in self.STORAGES:
             self.logger.error(f"Unsupported storage type: {storage_type}")
             raise ValueError(f"Unsupported storage type: {storage_type}")

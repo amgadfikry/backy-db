@@ -12,6 +12,7 @@ class EncryptionService(SecurityEngine):
     A service class for handling encryption operations.
     Inherits from SecurityEngine to utilize its methods.
     """
+
     def encrypt_using_symmetric_key(self) -> bytes:
         """
         Encrypt a file using a random symmetrical key
@@ -26,10 +27,16 @@ class EncryptionService(SecurityEngine):
             key (bytes): The generated symmetric key used for encryption.
         """
         # Get the compressed file from the processing path and ensure it exists
-        compress_file = list(self.processing_path.glob(f"*.{self.compression_extension}"))
+        compress_file = list(
+            self.processing_path.glob(f"*.{self.compression_extension}")
+        )
         if not compress_file:
-            self.logger.error(f"No {self.compression_extension} file found in the processing path.")
-            raise FileNotFoundError(f"No {self.compression_extension} file found in the processing path.")
+            self.logger.error(
+                f"No {self.compression_extension} file found in the processing path."
+            )
+            raise FileNotFoundError(
+                f"No {self.compression_extension} file found in the processing path."
+            )
         compress_file = compress_file[0]
 
         try:
@@ -39,13 +46,16 @@ class EncryptionService(SecurityEngine):
             nonce = os.urandom(12)
 
             # Read the compressed file and encrypt the file data using AESGCM and nonce
-            with open(compress_file, 'rb') as file:
+            with open(compress_file, "rb") as file:
                 plaintext = file.read()
             encrypted_data = aesgcm.encrypt(nonce, plaintext, None)
 
             # Write the encrypted data to a new file with .enc extension and with the nonce prepended
-            encrypted_file_path = self.processing_path / f"{compress_file.stem}.{self.compression_extension}.enc"
-            with open(encrypted_file_path, 'wb') as file:
+            encrypted_file_path = (
+                self.processing_path
+                / f"{compress_file.stem}.{self.compression_extension}.enc"
+            )
+            with open(encrypted_file_path, "wb") as file:
                 file.write(nonce + encrypted_data)
 
             # Clean up the original compressed file
@@ -81,22 +91,23 @@ class EncryptionService(SecurityEngine):
             # Encrypt the symmetric key using the public key with OAEP padding
             encrypted_symmetric_key = self.public_key.encrypt(
                 symmetric_key,
-                    padding.OAEP(
-                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                        algorithm=hashes.SHA256(),
-                        label=None
-                    )
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None,
+                ),
             )
 
             # Save the encrypted symmetric key to a file in the processing path with a version suffix
-            encrypted_file_path = self.processing_path / f"encryption_key_{self.version}.enc"
-            with open(encrypted_file_path, 'wb') as file:
+            encrypted_file_path = (
+                self.processing_path / f"encryption_key_{self.version}.enc"
+            )
+            with open(encrypted_file_path, "wb") as file:
                 file.write(encrypted_symmetric_key)
-        
+
             self.logger.info("Symmetric key encrypted successfully and saved to file")
             return encrypted_file_path
-        
+
         except Exception as e:
             self.logger.error(f"Error encrypting symmetric key with public key: {e}")
             raise RuntimeError("Failed to encrypt symmetric key with public key") from e
-    

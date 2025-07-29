@@ -8,9 +8,10 @@ class TestGenerateChecksum:
     """
     Test suite for the generate_sha256 function.
     """
+
     def test_generate_sha256_with_folder(self, tmp_path, caplog):
         """
-        Test that the generate_sha256 function raises FileNotFoundError for a folder path.  
+        Test that the generate_sha256 function raises FileNotFoundError for a folder path.
         """
         test_folder = tmp_path / "test_folder"
         test_folder.mkdir()
@@ -27,7 +28,10 @@ class TestGenerateChecksum:
         with caplog.at_level("ERROR"):
             with pytest.raises(FileNotFoundError):
                 generate_sha256(non_existent_file)
-            assert f"File {non_existent_file} does not exist or is not a file." in caplog.text
+            assert (
+                f"File {non_existent_file} does not exist or is not a file."
+                in caplog.text
+            )
 
     def test_generate_sha256_with_valid_file(self, tmp_path):
         """
@@ -61,7 +65,9 @@ class TestGenerateChecksum:
         """
         test_file = tmp_path / "test_file.txt"
         test_file.write_text("This is a test file.")
-        mocker.patch("utils.generate_checksum.open", side_effect=IOError("Mocked IOError"))
+        mocker.patch(
+            "utils.generate_checksum.open", side_effect=IOError("Mocked IOError")
+        )
         with pytest.raises(RuntimeError) as e:
             generate_sha256(test_file)
         assert f"Failed to generate checksum for {test_file}" in str(e.value)

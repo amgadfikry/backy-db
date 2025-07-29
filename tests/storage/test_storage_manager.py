@@ -17,10 +17,14 @@ class TestStorageManager:
         Setup fixture for StorageManager tests.
         """
         # Mock LocalStorage to prevent actual file operations during StorageManager tests
-        monkeypatch.setattr(LocalStorage, '__init__', lambda self, config: None)
-        monkeypatch.setattr(LocalStorage, 'upload', lambda self: Path("/mock/uploaded/path"))
-        monkeypatch.setattr(LocalStorage, 'download', lambda self: Path("/mock/downloaded/path"))
-        
+        monkeypatch.setattr(LocalStorage, "__init__", lambda self, config: None)
+        monkeypatch.setattr(
+            LocalStorage, "upload", lambda self: Path("/mock/uploaded/path")
+        )
+        monkeypatch.setattr(
+            LocalStorage, "download", lambda self: Path("/mock/downloaded/path")
+        )
+
     def test_init_success_local_storage(self, storage_manager_setup):
         """
         Test that StorageManager initializes successfully with a supported storage type (local).

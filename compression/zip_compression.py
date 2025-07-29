@@ -10,6 +10,7 @@ class ZipCompression(CompressionBase):
     A class to handle zip compression and decompression.
     Inherits from CompressionBase and implements methods for zip-specific operations.
     """
+
     def compress_folder(self) -> str:
         """
         Compress the given folder into a .zip archive preserving the folder structure.
@@ -23,8 +24,8 @@ class ZipCompression(CompressionBase):
 
         # Create a zip file and add the folder contents
         try:
-            with zipfile.ZipFile(zip_folder_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for file in folder_path.rglob('*'):
+            with zipfile.ZipFile(zip_folder_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for file in folder_path.rglob("*"):
                     if file.is_file():
                         arcname = Path(folder_path.name) / file.relative_to(folder_path)
                         zipf.write(file, arcname=arcname)
@@ -34,10 +35,10 @@ class ZipCompression(CompressionBase):
             raise RuntimeError("Failed to create zip file") from e
 
         # Remove the original folder after compression
-        delete_folder(folder_path)    
+        delete_folder(folder_path)
 
         return self.extension
-    
+
     def decompress_folder(self) -> Path:
         """
         Decompress a .zip file to a folder preserving the original structure.
@@ -50,7 +51,7 @@ class ZipCompression(CompressionBase):
 
         # Extract the zip file to a folder with the same name as the zip file
         try:
-            with zipfile.ZipFile(zip_path, 'r') as zipf:
+            with zipfile.ZipFile(zip_path, "r") as zipf:
                 if zipf.testzip() is None:
                     zipf.extractall(path=self.processing_path)
                 else:

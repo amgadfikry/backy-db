@@ -13,6 +13,7 @@ class MySQLDatabase(DatabaseBase):
     MySQL database implementation for the Backy project.
     This class provides methods to connect, backup, restore, and close the MySQL database.
     """
+
     def connect(self):
         """
         Connect to the MySQL database using the provided configuration.
@@ -29,17 +30,19 @@ class MySQLDatabase(DatabaseBase):
                 port=self.port,
                 user=self.user,
                 password=self.password,
-                database=self.db_name
+                database=self.db_name,
             )
 
             # Set the version of mysql
             self.version = self.connection.get_server_info()
-    
-            self.logger.info(f"Connected to MySQL database successfully {self.db_name} version {self.version}")
+
+            self.logger.info(
+                f"Connected to MySQL database successfully {self.db_name} version {self.version}"
+            )
         except Exception as e:
             self.logger.error(f"Failed to connect to MySQL database: {e}")
             raise ConnectionError(f"Failed to connect to MySQL database: {e}")
-        
+
     def get_tables_sorted(self, cursor: mysql.connector.cursor) -> List[str]:
         """
         Sort tables by their dependencies to ensure correct order for backup.
@@ -59,11 +62,14 @@ class MySQLDatabase(DatabaseBase):
                 self.logger.error("No tables found in the database.")
                 raise RuntimeError("No tables found in the database.")
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT TABLE_NAME, REFERENCED_TABLE_NAME
                 FROM information_schema.KEY_COLUMN_USAGE
                 WHERE TABLE_SCHEMA = %s AND REFERENCED_TABLE_NAME IS NOT NULL
-            """, (self.db_name,))
+            """,
+                (self.db_name,),
+            )
 
             deps = defaultdict(list)
             for child, parent in cursor.fetchall():
@@ -73,7 +79,9 @@ class MySQLDatabase(DatabaseBase):
                 deps.setdefault(table, [])
         except Exception as e:
             self.logger.error(f"Error in get and sort tables by dependencies: {e}")
-            raise RuntimeError(f"Failed to retrieve and sort tables by dependencies: {e}")
+            raise RuntimeError(
+                f"Failed to retrieve and sort tables by dependencies: {e}"
+            )
 
         sorted_tables = self.topological_sort(deps)
 
@@ -98,7 +106,7 @@ class MySQLDatabase(DatabaseBase):
             if not all_views:
                 self.logger.error("No views found in the database.")
                 raise RuntimeError("No views found in the database.")
-            
+
             deps = defaultdict(list)
             view_definitions = {}
 
@@ -110,14 +118,19 @@ class MySQLDatabase(DatabaseBase):
                 for other_view in all_views:
                     if other_view == view:
                         continue
-                    if f"`{other_view.lower()}`" in create_stmt or f"{other_view.lower()}" in create_stmt:
+                    if (
+                        f"`{other_view.lower()}`" in create_stmt
+                        or f"{other_view.lower()}" in create_stmt
+                    ):
                         deps[view].append(other_view)
 
             for view in all_views:
                 deps.setdefault(view, [])
         except Exception as e:
             self.logger.error(f"Error in get and sort views by dependencies: {e}")
-            raise RuntimeError(f"Failed to retrieve and sort views by dependencies: {e}")
+            raise RuntimeError(
+                f"Failed to retrieve and sort views by dependencies: {e}"
+            )
 
         sorted_views = self.topological_sort(deps)
         self.logger.info(f"Views sorted by dependencies successfully: {sorted_views}")
@@ -153,17 +166,24 @@ class MySQLDatabase(DatabaseBase):
                 for other_function in all_functions:
                     if other_function == function:
                         continue
-                    if f"`{other_function.lower()}`" in create_stmt or f"{other_function.lower()}" in create_stmt:
+                    if (
+                        f"`{other_function.lower()}`" in create_stmt
+                        or f"{other_function.lower()}" in create_stmt
+                    ):
                         deps[function].append(other_function)
 
             for function in all_functions:
                 deps.setdefault(function, [])
         except Exception as e:
             self.logger.error(f"Error in get and sort functions by dependencies: {e}")
-            raise RuntimeError(f"Failed to retrieve and sort functions by dependencies: {e}")
+            raise RuntimeError(
+                f"Failed to retrieve and sort functions by dependencies: {e}"
+            )
 
         sorted_functions = self.topological_sort(deps)
-        self.logger.info(f"Functions sorted by dependencies successfully: {sorted_functions}")
+        self.logger.info(
+            f"Functions sorted by dependencies successfully: {sorted_functions}"
+        )
         return sorted_functions
 
     def create_tables_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -185,13 +205,17 @@ class MySQLDatabase(DatabaseBase):
             for table_name in tables:
                 cursor.execute(f"SHOW CREATE TABLE `{table_name}`")
                 create_statement = cursor.fetchone()[1]
-                table_statements.append(f"-- Create {table_name.capitalize()} Table\n{create_statement}")
-    
+                table_statements.append(
+                    f"-- Create {table_name.capitalize()} Table\n{create_statement}"
+                )
+
         except Exception as e:
             self.logger.error(f"Error retrieving table creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve table creation statements: {e}")
 
-        self.logger.info(f"Table creation statements retrieved successfully for {len(table_statements)} tables.")
+        self.logger.info(
+            f"Table creation statements retrieved successfully for {len(table_statements)} tables."
+        )
         return ";\n\n".join(table_statements) + ";\n\n" if table_statements else ""
 
     def create_data_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -214,17 +238,23 @@ class MySQLDatabase(DatabaseBase):
                 cursor.execute(f"SELECT * FROM `{table_name}`")
                 rows = cursor.fetchall()
                 if not rows:
-                    self.logger.warning(f"No data found in table `{table_name}`. Skipping data insertion statements.")
+                    self.logger.warning(
+                        f"No data found in table `{table_name}`. Skipping data insertion statements."
+                    )
                     continue
                 values_list = [f"({to_sql_values(row)})" for row in rows]
-                data_statements.append(f"-- Insert Into {table_name.capitalize()} Table\nINSERT INTO `{table_name}` VALUES")
+                data_statements.append(
+                    f"-- Insert Into {table_name.capitalize()} Table\nINSERT INTO `{table_name}` VALUES"
+                )
                 data_statements.append("\t" + ",\n\t".join(values_list) + ";")
 
         except Exception as e:
             self.logger.error(f"Error retrieving data insertion statements: {e}")
             raise RuntimeError(f"Failed to retrieve data insertion statements: {e}")
 
-        self.logger.info("Data insertion statements retrieved successfully for all tables.")
+        self.logger.info(
+            "Data insertion statements retrieved successfully for all tables."
+        )
         return "\n".join(data_statements) + "\n" if data_statements else ""
 
     def create_views_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -246,13 +276,17 @@ class MySQLDatabase(DatabaseBase):
             for view_name in views:
                 cursor.execute(f"SHOW CREATE VIEW `{view_name}`")
                 create_statement = cursor.fetchone()[1]
-                view_statements.append(f"-- Create {view_name.capitalize()} view\n{create_statement}")
+                view_statements.append(
+                    f"-- Create {view_name.capitalize()} view\n{create_statement}"
+                )
 
         except Exception as e:
             self.logger.error(f"Error retrieving view creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve view creation statements: {e}")
 
-        self.logger.info(f"View creation statements retrieved successfully for {len(view_statements)} views.")
+        self.logger.info(
+            f"View creation statements retrieved successfully for {len(view_statements)} views."
+        )
         return ";\n\n".join(view_statements) + ";\n\n" if view_statements else ""
 
     def create_functions_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -274,13 +308,17 @@ class MySQLDatabase(DatabaseBase):
             for function_name in functions:
                 cursor.execute(f"SHOW CREATE FUNCTION `{function_name}`")
                 create_statement = cursor.fetchone()[2]
-                function_statements.append(f"-- Create {function_name.capitalize()} Function\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;")
+                function_statements.append(
+                    f"-- Create {function_name.capitalize()} Function\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;"
+                )
 
         except Exception as e:
             self.logger.error(f"Error retrieving function creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve function creation statements: {e}")
 
-        self.logger.info(f"Function creation statements retrieved successfully for {len(function_statements)} functions.")
+        self.logger.info(
+            f"Function creation statements retrieved successfully for {len(function_statements)} functions."
+        )
         return "\n\n".join(function_statements) + "\n\n" if function_statements else ""
 
     def create_procedures_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -307,14 +345,20 @@ class MySQLDatabase(DatabaseBase):
             for procedure in all_procedures:
                 cursor.execute(f"SHOW CREATE PROCEDURE `{procedure}`")
                 create_statement = cursor.fetchone()[2]
-                procedure_statements.append(f"-- Create {procedure.capitalize()} Procedure\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;")
+                procedure_statements.append(
+                    f"-- Create {procedure.capitalize()} Procedure\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;"
+                )
 
         except Exception as e:
             self.logger.error(f"Error retrieving procedure creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve procedure creation statements: {e}")
 
-        self.logger.info(f"Procedure creation statements retrieved successfully for {len(procedure_statements)} procedures.")
-        return "\n\n".join(procedure_statements) + "\n\n" if procedure_statements else ""
+        self.logger.info(
+            f"Procedure creation statements retrieved successfully for {len(procedure_statements)} procedures."
+        )
+        return (
+            "\n\n".join(procedure_statements) + "\n\n" if procedure_statements else ""
+        )
 
     def create_triggers_statements(self, cursor: mysql.connector.cursor) -> str:
         """
@@ -340,13 +384,17 @@ class MySQLDatabase(DatabaseBase):
             for trigger_name in triggers:
                 cursor.execute(f"SHOW CREATE TRIGGER `{trigger_name}`")
                 _, create_stmt = cursor.fetchone()
-                statements.append(f"-- Create {trigger_name.capitalize()} Trigger\nDELIMITER ;;\n{create_stmt};;\nDELIMITER ;")
+                statements.append(
+                    f"-- Create {trigger_name.capitalize()} Trigger\nDELIMITER ;;\n{create_stmt};;\nDELIMITER ;"
+                )
 
         except Exception as e:
             self.logger.error(f"Error retrieving trigger creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve trigger creation statements: {e}")
 
-        self.logger.info(f"Trigger creation statements retrieved successfully for {len(statements)} triggers.")
+        self.logger.info(
+            f"Trigger creation statements retrieved successfully for {len(statements)} triggers."
+        )
         return "\n\n".join(statements) + "\n\n" if statements else ""
 
     def create_events_statements(self, cursor: mysql.connector.cursor) -> str:
@@ -380,12 +428,16 @@ class MySQLDatabase(DatabaseBase):
                 create_statement = cursor.fetchone()[3]
 
                 # Check if the events were originally enabled and modify them to be disabled
-                if status == 'ENABLED':
+                if status == "ENABLED":
                     originally_enabled_events.append(event_name)
-                create_statement = re.sub(r'\bENABLE\b', 'DISABLE', create_statement, count=1)
+                create_statement = re.sub(
+                    r"\bENABLE\b", "DISABLE", create_statement, count=1
+                )
 
                 # Append the modified create statement to the event statements
-                event_statements.append(f"-- Create {event_name.capitalize()} Event\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;")
+                event_statements.append(
+                    f"-- Create {event_name.capitalize()} Event\nDELIMITER ;;\n{create_statement};;\nDELIMITER ;"
+                )
 
             # If there were originally enabled events, add statements to re-enable them at the end
             if originally_enabled_events:
@@ -397,7 +449,9 @@ class MySQLDatabase(DatabaseBase):
             self.logger.error(f"Error retrieving event creation statements: {e}")
             raise RuntimeError(f"Failed to retrieve event creation statements: {e}")
 
-        self.logger.info(f"Event creation statements retrieved successfully for {len(event_statements)} events.")
+        self.logger.info(
+            f"Event creation statements retrieved successfully for {len(event_statements)} events."
+        )
         return "\n\n".join(event_statements) + "\n\n" if event_statements else ""
 
     def backup(self, timestamp: str) -> List[Path]:
@@ -413,7 +467,7 @@ class MySQLDatabase(DatabaseBase):
             List[Path]: List of backup file paths created during the backup process.
         """
         backup_files: List[Path] = []
-    
+
         ordered_features: List[tuple[str, callable]] = [
             ("tables", self.create_tables_statements),
             ("data", self.create_data_statements),
@@ -440,12 +494,17 @@ class MySQLDatabase(DatabaseBase):
 
                 if self.one_file:
                     full_content = "\n\n".join(content_dict.values())
-                    backup_file = self.processing_path / f"{self.db_name}_{timestamp}_backup.sql"
+                    backup_file = (
+                        self.processing_path / f"{self.db_name}_{timestamp}_backup.sql"
+                    )
                     self.create_backup_file(backup_file, full_content)
                     backup_files.append(backup_file)
                 else:
                     for feature, content in content_dict.items():
-                        backup_file = self.processing_path / f"{self.db_name}_{feature}_{timestamp}_backup.sql"
+                        backup_file = (
+                            self.processing_path
+                            / f"{self.db_name}_{feature}_{timestamp}_backup.sql"
+                        )
                         self.create_sql_backup_file(backup_file, content)
                         backup_files.append(backup_file)
 
@@ -453,13 +512,17 @@ class MySQLDatabase(DatabaseBase):
             self.logger.error(f"Error during backup process: {e}")
             raise RuntimeError(f"Failed to perform backup: {e}")
 
-        self.logger.info(f"Backup completed successfully. Created {len(backup_files)} backup files.")
+        self.logger.info(
+            f"Backup completed successfully. Created {len(backup_files)} backup files."
+        )
         return backup_files
 
     def restore(self, backup_file: Path):
         self.logger.error("Restore method is not implemented for MySQLDatabase yet.")
-        raise NotImplementedError("Restore method is not implemented for MySQLDatabase yet.")
-    
+        raise NotImplementedError(
+            "Restore method is not implemented for MySQLDatabase yet."
+        )
+
     def close(self):
         """
         Close the MySQL database connection.

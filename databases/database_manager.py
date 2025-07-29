@@ -6,14 +6,13 @@ from databases.database_metadata import DatabaseMetadata
 from datetime import datetime
 
 
-
 class DatabaseManager:
     """
     Manages the database operations for the Backy project.
     This class is responsible for initializing and managing the database backup and restore processes.
     """
 
-    DATABASES ={
+    DATABASES = {
         "mysql": MySQLDatabase,
     }
 
@@ -52,7 +51,9 @@ class DatabaseManager:
             # Perform the backup to database
             backup_files = self.db.backup(timestamp)
             if not backup_files:
-                self.logger.error("No backup files were created during the backup process.")
+                self.logger.error(
+                    "No backup files were created during the backup process."
+                )
                 raise RuntimeError("No backup files were created.")
             self.logger.info(f"Backup files created: {backup_files}")
 
@@ -72,9 +73,9 @@ class DatabaseManager:
         except Exception as e:
             self.logger.error(f"Error during backup process: {e}")
             raise RuntimeError(f"Failed to perform backup: {e}")
-    
+
     def restore(self, backup_file: Path):
         self.logger.error("Restore method is not implemented for this database type.")
-        raise NotImplementedError("Restore method is not implemented for this database type.")
-
-
+        raise NotImplementedError(
+            "Restore method is not implemented for this database type."
+        )

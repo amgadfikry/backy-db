@@ -14,10 +14,13 @@ class LoggerManager:
     A class to manage logging setup for the application.
     This class provides a method to set up a logger with specified configurations.
     """
+
     __logger_cache = {}
 
     @staticmethod
-    def setup_logger(name: str = "backydb", log_file: Union[str, Path] = None, level=logging.DEBUG) -> logging.Logger:
+    def setup_logger(
+        name: str = "backydb", log_file: Union[str, Path] = None, level=logging.DEBUG
+    ) -> logging.Logger:
         """
         Set up a logger with the specified name and log file.
         If no log file is specified, logs will only be printed to the console.
@@ -54,7 +57,6 @@ class LoggerManager:
 
         LoggerManager.__logger_cache[cache_key] = logger
         return logger
-    
 
     @staticmethod
     def __console_handler(level: int) -> logging.StreamHandler:
@@ -67,10 +69,11 @@ class LoggerManager:
         """
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
-        console_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        console_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        )
         console_handler.setFormatter(console_formatter)
         return console_handler
-
 
     @staticmethod
     def __file_handler(log_file: Path, level: int) -> logging.FileHandler:
@@ -84,6 +87,8 @@ class LoggerManager:
         """
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(level)
-        file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        file_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        )
         file_handler.setFormatter(file_formatter)
         return file_handler

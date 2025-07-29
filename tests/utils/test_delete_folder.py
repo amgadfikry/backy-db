@@ -7,6 +7,7 @@ class TestDeleteFolder:
     """
     Test suite for the delete_folder function.
     """
+
     def test_delete_existing_folder(self, tmp_path):
         """
         Test that an existing folder and its contents are deleted.
@@ -25,7 +26,10 @@ class TestDeleteFolder:
         non_existing = tmp_path / "nope"
         with caplog.at_level("WARNING"):
             delete_folder(non_existing)
-            assert f"Folder {non_existing} does not exist or is not a directory." in caplog.text
+            assert (
+                f"Folder {non_existing} does not exist or is not a directory."
+                in caplog.text
+            )
 
     def test_delete_file_instead_of_folder(self, tmp_path, caplog):
         """
@@ -36,14 +40,20 @@ class TestDeleteFolder:
         assert file_path.exists()
         with caplog.at_level("WARNING"):
             delete_folder(file_path)
-            assert f"Folder {file_path} does not exist or is not a directory." in caplog.text
+            assert (
+                f"Folder {file_path} does not exist or is not a directory."
+                in caplog.text
+            )
         assert file_path.exists()
 
     def test_permission_error_raises(self, tmp_path, mocker):
         """
         Test that a permission error during deletion raises a RuntimeError.
         """
-        mocker.patch("utils.delete_folder.shutil.rmtree", side_effect=PermissionError("Permission denied"))
+        mocker.patch(
+            "utils.delete_folder.shutil.rmtree",
+            side_effect=PermissionError("Permission denied"),
+        )
         folder = tmp_path / "protected_folder"
         folder.mkdir()
         with pytest.raises(RuntimeError):

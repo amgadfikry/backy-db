@@ -7,6 +7,7 @@ from logger.logger_manager import LoggerManager
 logger = LoggerManager.setup_logger("utils")
 APP_NAME = "backydb"
 
+
 def generate_main_backup_path(subfolder: str = "") -> Path:
     """
     Generate and create a default backup path based on the system and user

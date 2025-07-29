@@ -16,6 +16,7 @@ class DatabaseBase(ABC):
     This class defines the common interface and methods that all database
     classes should implement.
     """
+
     def __init__(self, config: Dict):
         """
         Initialize the database with the given configuration
@@ -36,18 +37,22 @@ class DatabaseBase(ABC):
         Connect to the database using the provided configuration.
         This method should be implemented by subclasses.
         """
-        self.logger.error(f"connect method not implemented in subclass {self.__class__.__name__}")
+        self.logger.error(
+            f"connect method not implemented in subclass {self.__class__.__name__}"
+        )
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     @abstractmethod
     def backup(self, timestamp: str) -> Path:
         """
         Perform a backup of the database.
         This method should be implemented by subclasses.
         """
-        self.logger.error(f"backup method not implemented in subclass {self.__class__.__name__}")
+        self.logger.error(
+            f"backup method not implemented in subclass {self.__class__.__name__}"
+        )
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     @abstractmethod
     def restore(self, backup_file: Path):
         """
@@ -56,18 +61,22 @@ class DatabaseBase(ABC):
             backup_file (Path): The path to the backup file.
         This method should be implemented by subclasses.
         """
-        self.logger.error(f"restore method not implemented in subclass {self.__class__.__name__}")
+        self.logger.error(
+            f"restore method not implemented in subclass {self.__class__.__name__}"
+        )
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     @abstractmethod
     def close(self):
         """
         Close the database connection.
         This method should be implemented by subclasses.
         """
-        self.logger.error(f"close method not implemented in subclass {self.__class__.__name__}")
+        self.logger.error(
+            f"close method not implemented in subclass {self.__class__.__name__}"
+        )
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     def topological_sort(self, deps: Dict[str, list[str]]) -> list[str]:
         """
         Perform a topological sort on the dependency graph to return sorted list
@@ -104,9 +113,13 @@ class DatabaseBase(ABC):
 
         # Check if we have a valid topological sort or if there is a cycle
         if len(sorted_nodes) != len(in_degree):
-            self.logger.error("Cycle detected in dependency graph, cannot perform topological sort.")
-            raise RuntimeError("Cycle detected in dependency graph, cannot perform topological sort.")
-        
+            self.logger.error(
+                "Cycle detected in dependency graph, cannot perform topological sort."
+            )
+            raise RuntimeError(
+                "Cycle detected in dependency graph, cannot perform topological sort."
+            )
+
         self.logger.info(f"Topological sort completed successfully: {sorted_nodes}")
         return sorted_nodes
 
@@ -120,11 +133,11 @@ class DatabaseBase(ABC):
             Path of the file after write contents to it
         """
         try:
-            with open(backup_file, 'w', encoding='utf-8') as f:
-                    f.write(f"-- Backup for {backup_file.name}\n")
-                    f.write(f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`;\n")
-                    f.write(f"USE `{self.db_name}`;\n\n")
-                    f.write(content)
+            with open(backup_file, "w", encoding="utf-8") as f:
+                f.write(f"-- Backup for {backup_file.name}\n")
+                f.write(f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`;\n")
+                f.write(f"USE `{self.db_name}`;\n\n")
+                f.write(content)
         except Exception as e:
             self.logger.error(f"Error creating backup file {backup_file.name}: {e}")
             raise RuntimeError("Failed to create backup file") from e

@@ -9,6 +9,7 @@ class CompressionManager:
     A class to manage compression and decompression of files.
     This class provides methods to compress a folder into a specific format (zip or tar) and decompress files.
     """
+
     def __init__(self, compression_type):
         """
         Initialize the CompressionManager with a specified compression type.
@@ -16,9 +17,9 @@ class CompressionManager:
             compression_type (str): Type of compression to use ('zip' or 'tar').
         """
         types = {
-            'zip': ZipCompression,
-            'tar': TarCompression,
-            'targz': TarCompression,
+            "zip": ZipCompression,
+            "tar": TarCompression,
+            "targz": TarCompression,
         }
         self.compressor = types[compression_type](compression_type)
 

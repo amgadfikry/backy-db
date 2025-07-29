@@ -14,6 +14,7 @@ class DecryptionService(SecurityEngine):
     A service class for handling decryption operations.
     Inherits from SecurityEngine to utilize its methods.
     """
+
     def __decrypt_private_key(self, version: str = "v1") -> rsa.RSAPrivateKey:
         """
         Decrypt the private key using the password.
@@ -33,8 +34,7 @@ class DecryptionService(SecurityEngine):
             # Load the private key from the file and decrypt it using the password
             with open(private_key_path, "rb") as f:
                 private_key = serialization.load_pem_private_key(
-                    f.read(),
-                    password=self.password.encode()
+                    f.read(), password=self.password.encode()
                 )
 
             self.logger.info("Private key loaded successfully")
@@ -42,7 +42,7 @@ class DecryptionService(SecurityEngine):
         except Exception as e:
             self.logger.error(f"Error loading private key: {e}")
             raise RuntimeError("Failed to load private key") from e
-    
+
     def decrypt_symmetric_key(self) -> bytes:
         """
         Decrypt the symmetric key using the private key.
@@ -64,7 +64,7 @@ class DecryptionService(SecurityEngine):
         if not encrypted_key_path:
             self.logger.error("Encrypted symmetric key file does not exist.")
             raise FileNotFoundError("Encrypted symmetric key file does not exist.")
-        
+
         try:
             # Load the metadata to get the version of the private key
             # Or use the version from the encrypted key file name as fallback
@@ -72,30 +72,30 @@ class DecryptionService(SecurityEngine):
                 metadata = json.load(f)
             version = metadata.get("version", None)
             if not version:
-                version = encrypted_key_path[0].stem.split('_')[-1]
+                version = encrypted_key_path[0].stem.split("_")[-1]
 
             # Decrypt the private key using the version and check if it loaded successfully
             private_key = self.__decrypt_private_key(version)
             if not private_key:
                 raise ValueError("Private key is not loaded.")
-            
+
             # Read the encrypted symmetric key
             with open(encrypted_key_path[0], "rb") as f:
                 encrypted_key = f.read()
-            
+
             # Decrypt the symmetric key using the private key with OAEP padding
             decrypted_symmetric_key = private_key.decrypt(
                 encrypted_key,
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
-                    label=None
-                )
+                    label=None,
+                ),
             )
-            
+
             self.logger.info("Symmetric key decrypted successfully.")
             return decrypted_symmetric_key
-        
+
         except Exception as e:
             self.logger.error(f"Error decrypting symmetric key: {e}")
             raise RuntimeError("Failed to decrypt symmetric key") from e
@@ -111,7 +111,9 @@ class DecryptionService(SecurityEngine):
             Path: The path to the decrypted file.
         """
         # Ensure the encrypted file exists in the processing path
-        encrypted_data_path = list(self.processing_path.glob(f"*.{self.compression_extension}.enc"))
+        encrypted_data_path = list(
+            self.processing_path.glob(f"*.{self.compression_extension}.enc")
+        )
         if not encrypted_data_path:
             self.logger.error("No encrypted file found in the processing path.")
             raise FileNotFoundError("No encrypted file found in the processing path.")
@@ -119,7 +121,7 @@ class DecryptionService(SecurityEngine):
         if not symmetric_key:
             self.logger.error("Symmetric key is not provided for decryption.")
             raise ValueError("Symmetric key is not provided for decryption.")
-    
+
         try:
             # Load the encrypted data from the file
             with open(encrypted_data_path, "rb") as f:
@@ -129,7 +131,7 @@ class DecryptionService(SecurityEngine):
             decrypted_data = AESGCM(symmetric_key).decrypt(
                 nonce=encrypted_data[:12],
                 data=encrypted_data[12:],
-                associated_data=None
+                associated_data=None,
             )
 
             # Write the decrypted data to a new file with the same name as the encrypted file but without the .enc extension
@@ -141,9 +143,11 @@ class DecryptionService(SecurityEngine):
             if encrypted_data_path.exists():
                 encrypted_data_path.unlink()
 
-            self.logger.info(f"Data decrypted successfully and saved to {decrypted_data_path}")
+            self.logger.info(
+                f"Data decrypted successfully and saved to {decrypted_data_path}"
+            )
             return decrypted_data_path
-        
+
         except Exception as e:
             self.logger.error(f"Error decrypting data: {e}")
             raise RuntimeError("Failed to decrypt data") from e

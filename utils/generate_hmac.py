@@ -6,6 +6,7 @@ from logger.logger_manager import LoggerManager
 
 logger = LoggerManager.setup_logger("utils")
 
+
 def compute_hmac(file_path: Path, key: bytes) -> str:
     """
     Compute HMAC for a file using SHA256.

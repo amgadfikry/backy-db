@@ -10,14 +10,15 @@ class TarCompression(CompressionBase):
     A class to handle tar compression and decompression.
     Inherits from CompressionBase and implements methods for tar-specific operations.
     """
+
     TAR_READ_MODES = {
-    'tar': 'r',
-    'tar.gz': 'r:gz',
+        "tar": "r",
+        "tar.gz": "r:gz",
     }
 
     TAR_WRITE_MODES = {
-    'tar': 'w',
-    'tar.gz': 'w:gz',
+        "tar": "w",
+        "tar.gz": "w:gz",
     }
 
     def compress_folder(self) -> str:

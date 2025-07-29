@@ -1,12 +1,19 @@
 # tests/schema/test_backup_schema.py
 import pytest
-from schema.backup_schema import DatabaseConfig, StorageConfig, CompressionConfig, SecurityConfig, BackupConfig
+from schema.backup_schema import (
+    DatabaseConfig,
+    StorageConfig,
+    CompressionConfig,
+    SecurityConfig,
+    BackupConfig,
+)
 
 
 class TestBackupSchema:
     """
     Tests for the backup schema.
     """
+
     @pytest.fixture
     def valid_config(self):
         """
@@ -25,12 +32,12 @@ class TestBackupSchema:
                 "path": "/backups",
             },
         }
-    
+
     def test_valid_and_default_database_config(self, valid_config):
         """
         Test that a valid database configuration is accepted. and defaults are set correctly.
         """
-        config = DatabaseConfig(**valid_config['database'])
+        config = DatabaseConfig(**valid_config["database"])
         assert config.host == "localhost"
         assert config.port == 3306
         assert config.user == "test_user"
@@ -50,25 +57,25 @@ class TestBackupSchema:
         """
         Test that an invalid database configuration raises a validation error.
         """
-        valid_config['database']['db_type'] = 'invalid_db_type'
+        valid_config["database"]["db_type"] = "invalid_db_type"
         with pytest.raises(ValueError):
-            config = DatabaseConfig(**valid_config['database'])
+            config = DatabaseConfig(**valid_config["database"])
             assert config is None
 
     def test_missing_required_fields(self, valid_config):
         """
         Test that missing required fields in the database configuration raises a validation error.
         """
-        del valid_config['database']['host']
+        del valid_config["database"]["host"]
         with pytest.raises(ValueError):
-            config = DatabaseConfig(**valid_config['database'])
+            config = DatabaseConfig(**valid_config["database"])
             assert config is None
 
     def test_valid_and_default_storage_config(self, valid_config):
         """
         Test that a valid storage configuration is accepted.
         """
-        config = StorageConfig(**valid_config['storage'])
+        config = StorageConfig(**valid_config["storage"])
         assert config.storage_type == "local"
         assert config.path == "/backups"
 
@@ -88,7 +95,7 @@ class TestBackupSchema:
             config = CompressionConfig(compression=True)
             assert config.compression is True
             assert "Compression type is not set, defaulting to 'zip'." in caplog.text
-            assert config.compression_type == 'zip'
+            assert config.compression_type == "zip"
 
     def test_security_defaults_values(self):
         """
@@ -102,7 +109,7 @@ class TestBackupSchema:
         assert config.integrity_check is False
         assert config.integrity_password is None
         assert config.file_extension is None
-    
+
     def test_security_encryption_without_password(self, caplog):
         """
         Test that enabling encryption without a password raises an error.
@@ -111,7 +118,10 @@ class TestBackupSchema:
             with pytest.raises(ValueError):
                 config = SecurityConfig(encryption=True)
                 assert config.encryption is True
-                assert "Private key password must be set if encryption is enabled." in caplog.text
+                assert (
+                    "Private key password must be set if encryption is enabled."
+                    in caplog.text
+                )
                 assert config.private_key_password is None
 
     def test_security_encryption_with_default_size(self, caplog):
@@ -120,7 +130,7 @@ class TestBackupSchema:
         """
         with caplog.at_level("WARNING"):
             config = SecurityConfig(encryption=True, private_key_password="test_pass")
-            assert config.private_key_size == '4096'
+            assert config.private_key_size == "4096"
             assert "Private key size is not set, defaulting to '4096'." in caplog.text
 
     def test_security_integrity_check_without_password(self, caplog):
@@ -132,10 +142,13 @@ class TestBackupSchema:
                 config = SecurityConfig(
                     encryption=True,
                     integrity_check=True,
-                    private_key_password="test_pass"
+                    private_key_password="test_pass",
                 )
                 assert config.integrity_check is True
-                assert "Integrity password must be set if integrity check is enabled." in caplog.text
+                assert (
+                    "Integrity password must be set if integrity check is enabled."
+                    in caplog.text
+                )
                 assert config.integrity_password is None
 
     def test_security_integrity_check_without_encryption(self, caplog):
@@ -145,17 +158,20 @@ class TestBackupSchema:
         with caplog.at_level("WARNING"):
             config = SecurityConfig(integrity_check=True)
             assert config.integrity_check is False
-            assert "Integrity check cannot be performed without encryption. Disabling integrity check." in caplog.text
+            assert (
+                "Integrity check cannot be performed without encryption. Disabling integrity check."
+                in caplog.text
+            )
 
     def test_backup_config_combined(self, valid_config):
         """
         Test that a complete backup configuration is valid and combines all settings.
         """
-        valid_config['security'] = {
+        valid_config["security"] = {
             "encryption": True,
             "private_key_password": "test_pass",
         }
-        valid_config['compression'] = {
+        valid_config["compression"] = {
             "compression": True,
             "compression_type": "tar",
         }
@@ -179,7 +195,7 @@ class TestBackupSchema:
         """
         Test that a backup configuration with encryption but no compression is valid.
         """
-        valid_config['security'] = {
+        valid_config["security"] = {
             "encryption": True,
             "private_key_password": "test_pass",
             "private_key_size": "2048",
@@ -198,11 +214,11 @@ class TestBackupSchema:
         """
         Test that the file extension is set correctly when compression is enabled.
         """
-        valid_config['compression'] = {
+        valid_config["compression"] = {
             "compression": True,
             "compression_type": "zip",
         }
-        valid_config['security'] = {
+        valid_config["security"] = {
             "encryption": True,
             "private_key_password": "test_pass",
         }

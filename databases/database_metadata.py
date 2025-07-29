@@ -12,6 +12,7 @@ class DatabaseMetadata(DatabaseBase):
     This class extends the DatabaseBase class and provides methods to handle
     metadata file, checksum generation, and create the main folder for backups.
     """
+
     def create_backup_folder(self, timestamp: str) -> Path:
         """
         Create a backup subfolder with the given timestamp and name of the database.
@@ -22,16 +23,20 @@ class DatabaseMetadata(DatabaseBase):
             Path: Path to the created backup folder.
         """
         try:
-            backup_folder = self.backup_folder_path / f"{self.db_name}_{timestamp}_backup"
+            backup_folder = (
+                self.backup_folder_path / f"{self.db_name}_{timestamp}_backup"
+            )
             backup_folder.mkdir(parents=True, exist_ok=True)
             self.backup_folder_path = backup_folder
         except Exception as e:
             self.logger.error(f"Error creating backup folder: {e}")
             raise RuntimeError("Failed to create backup folder") from e
 
-        self.logger.info(f"Backup folder created successfully at {self.backup_folder_path}")
+        self.logger.info(
+            f"Backup folder created successfully at {self.backup_folder_path}"
+        )
         return self.backup_folder_path
-    
+
     def create_metadata_file(self, timestamp: str) -> Path:
         """
         Create a metadata file for the backup, including database details and backup features.
@@ -67,13 +72,15 @@ class DatabaseMetadata(DatabaseBase):
                 "procedures": self.procedures,
                 "triggers": self.triggers,
                 "events": self.events,
-            }
+            },
         }
 
         # Create metadata file
-        metadata_file = self.backup_folder_path / f"{self.db_name}_{timestamp}_metadata.json"
+        metadata_file = (
+            self.backup_folder_path / f"{self.db_name}_{timestamp}_metadata.json"
+        )
         try:
-            with open(metadata_file, 'w', encoding='utf-8') as f:
+            with open(metadata_file, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=4)
         except Exception as e:
             self.logger.error(f"Error creating metadata file: {e}")
@@ -81,7 +88,7 @@ class DatabaseMetadata(DatabaseBase):
 
         self.logger.info(f"Metadata file created successfully at {metadata_file}")
         return metadata_file
-    
+
     def create_checksum_file(self, timestamp: str) -> Path:
         """
         Generate a SHA-256 checksum for all backup files in the backup folder.
@@ -97,11 +104,13 @@ class DatabaseMetadata(DatabaseBase):
             self.logger.error("No backup files found to generate checksums.")
             raise FileNotFoundError("No backup files found to generate checksums.")
 
-        checksum_file = self.backup_folder_path / f"{self.db_name}_{timestamp}_checksum.sha256"
+        checksum_file = (
+            self.backup_folder_path / f"{self.db_name}_{timestamp}_checksum.sha256"
+        )
 
         # Generate checksums for each file
         try:
-            with open(checksum_file, 'w', encoding='utf-8') as f:
+            with open(checksum_file, "w", encoding="utf-8") as f:
                 for file in backup_files:
                     checksum = generate_sha256(file)
                     f.write(f"{checksum}  {file.name}\n")
@@ -111,5 +120,3 @@ class DatabaseMetadata(DatabaseBase):
 
         self.logger.info(f"Checksum file created successfully at {checksum_file}")
         return checksum_file
-
-    

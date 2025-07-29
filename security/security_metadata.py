@@ -13,6 +13,7 @@ class SecurityMetadata(SecurityEngine):
     Creating metadata files, copy public keys, and checking the integrity of files
     Inherits from SecurityEngine to utilize its methods.
     """
+
     def create_metadata(self) -> Path:
         """
         Create metadata file that will used all the information of the
@@ -20,7 +21,7 @@ class SecurityMetadata(SecurityEngine):
         """
         # Data to be included in the metadata file
         metadata = {
-            "timestamp": datetime.now().strftime('%Y%m%d_%H%M%S'),
+            "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
             "main_folder": str(self.processing_path.name),
             "encrypted_data": f"{self.processing_path.name}.{self.compression_extension}.enc",
             "version": self.version,
@@ -29,7 +30,7 @@ class SecurityMetadata(SecurityEngine):
             "symmetric_key": "256 bits",
             "private_key_size": "4096 bits",
             "encryption_type": "symmetric + asymmetric + password",
-            "description": "This metadata file contains information about the encryption process."
+            "description": "This metadata file contains information about the encryption process.",
         }
 
         try:
@@ -40,7 +41,7 @@ class SecurityMetadata(SecurityEngine):
 
             self.logger.info("Metadata file created successfully")
             return metadata_file_path
-    
+
         except Exception as e:
             self.logger.error(f"Error creating metadata file: {e}")
             raise RuntimeError("Failed to create metadata file") from e
@@ -57,13 +58,19 @@ class SecurityMetadata(SecurityEngine):
 
         # Check if the public key file exists
         if not public_key_path.exists():
-            self.logger.error(f"Public key file {public_key_name} does not exist in the secret path.")
-            raise FileNotFoundError(f"Public key file {public_key_name} does not exist in the secret path.")
-        
+            self.logger.error(
+                f"Public key file {public_key_name} does not exist in the secret path."
+            )
+            raise FileNotFoundError(
+                f"Public key file {public_key_name} does not exist in the secret path."
+            )
+
         # Copy the public key file to the processing path
         shutil.copy2(public_key_path, self.processing_path)
 
-        self.logger.info(f"Public key file {public_key_name} copied to the processing path")
+        self.logger.info(
+            f"Public key file {public_key_name} copied to the processing path"
+        )
         return self.processing_path / public_key_name
 
     def create_integrity_file(self) -> Path:
@@ -83,7 +90,7 @@ class SecurityMetadata(SecurityEngine):
             # Create the integrity file path
             integrity_file_path = self.processing_path / "integrity.sha256"
             # Write the checksums to the integrity file with name and checksum
-            with open(integrity_file_path, 'w', encoding='utf-8') as f:
+            with open(integrity_file_path, "w", encoding="utf-8") as f:
                 for file in files:
                     checksum = compute_hmac(file, self.integrity_password.encode())
                     f.write(f"{checksum}  {file.name}\n")
@@ -105,11 +112,13 @@ class SecurityMetadata(SecurityEngine):
         integrity_file_path = self.processing_path / "integrity.sha256"
         if not integrity_file_path.exists():
             self.logger.error("Integrity file does not exist in the processing path.")
-            raise FileNotFoundError("Integrity file does not exist in the processing path.")
-        
+            raise FileNotFoundError(
+                "Integrity file does not exist in the processing path."
+            )
+
         try:
             # Read the integrity file and verify checksums
-            with open(integrity_file_path, 'r', encoding='utf-8') as f:
+            with open(integrity_file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     checksum, filename = line.strip().split()
                     # Skip the integrity file itself
@@ -118,17 +127,22 @@ class SecurityMetadata(SecurityEngine):
                     # Get the file path and ensure it exists
                     file_path = self.processing_path / filename
                     if not file_path.exists():
-                        self.logger.error(f"File {filename} does not exist in the processing path.")
-                        raise FileNotFoundError(f"File {filename} does not exist in the processing path.")
+                        self.logger.error(
+                            f"File {filename} does not exist in the processing path."
+                        )
+                        raise FileNotFoundError(
+                            f"File {filename} does not exist in the processing path."
+                        )
                     # Compute HMAC for the file and compare with checksum
-                    computed_checksum = compute_hmac(file_path, self.integrity_password.encode())
+                    computed_checksum = compute_hmac(
+                        file_path, self.integrity_password.encode()
+                    )
                     if computed_checksum != checksum:
                         self.logger.error(f"Checksum mismatch for file {filename}")
                         return False
             self.logger.info("Integrity check passed for all files")
             return True
-        
+
         except Exception as e:
             self.logger.error(f"Error verifying integrity: {e}")
             raise RuntimeError("Failed to verify integrity") from e
-    

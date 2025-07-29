@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime, date, time
 from typing import Any
 
+
 def format_value(val: Any) -> str:
     """Format a single value for SQL insertion.
     Args:
@@ -43,4 +44,4 @@ def to_sql_values(row: tuple) -> str:
     Returns:
         str: A string representation of the row values suitable for SQL insertion.
     """
-    return ', '.join(format_value(v) for v in row)
+    return ", ".join(format_value(v) for v in row)

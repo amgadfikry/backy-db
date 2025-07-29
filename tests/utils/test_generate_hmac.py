@@ -9,6 +9,7 @@ class TestGenerateHMAC:
     """
     Test suite for the compute_hmac function.
     """
+
     def test_compute_hmac_with_folder(self, tmp_path, caplog):
         """
         Test that the compute_hmac function raises FileNotFoundError for a folder path.
@@ -17,7 +18,7 @@ class TestGenerateHMAC:
         test_folder.mkdir()
         with caplog.at_level("ERROR"):
             with pytest.raises(FileNotFoundError):
-                compute_hmac(test_folder, b'secret_key')
+                compute_hmac(test_folder, b"secret_key")
             assert f"File {test_folder} does not exist or is not a file." in caplog.text
 
     def test_compute_hmac_with_nonexistent_file(self, tmp_path, caplog):
@@ -27,8 +28,11 @@ class TestGenerateHMAC:
         non_existent_file = tmp_path / "non_existent_file.txt"
         with caplog.at_level("ERROR"):
             with pytest.raises(FileNotFoundError):
-                compute_hmac(non_existent_file, b'secret_key')
-            assert f"File {non_existent_file} does not exist or is not a file." in caplog.text
+                compute_hmac(non_existent_file, b"secret_key")
+            assert (
+                f"File {non_existent_file} does not exist or is not a file."
+                in caplog.text
+            )
 
     def test_compute_hmac_with_no_key(self, tmp_path, caplog):
         """
@@ -38,7 +42,7 @@ class TestGenerateHMAC:
         test_file.write_text("This is a test file.")
         with caplog.at_level("ERROR"):
             with pytest.raises(ValueError):
-                compute_hmac(test_file, b'')
+                compute_hmac(test_file, b"")
             assert "HMAC key must be provided." in caplog.text
 
     def test_compute_hmac_with_valid_file(self, tmp_path):
@@ -47,7 +51,7 @@ class TestGenerateHMAC:
         """
         test_file = tmp_path / "test_file.txt"
         test_file.write_text("This is a test file.")
-        key = b'secret_key'
+        key = b"secret_key"
         hmac_value = compute_hmac(test_file, key)
         assert hmac_value is not None
         assert isinstance(hmac_value, str)
@@ -61,7 +65,7 @@ class TestGenerateHMAC:
         """
         empty_file = tmp_path / "empty_file.txt"
         empty_file.touch()
-        key = b'secret_key'
+        key = b"secret_key"
         hmac_value = compute_hmac(empty_file, key)
         assert hmac_value is not None
         assert isinstance(hmac_value, str)
@@ -69,14 +73,13 @@ class TestGenerateHMAC:
         expected_hmac.update(empty_file.read_bytes())
         assert hmac_value == expected_hmac.hexdigest()
 
-
     def test_compute_hmac_with_error_handling(self, tmp_path, mocker):
         """
         Test that the compute_hmac function raises RuntimeError on unexpected errors.
         """
         test_file = tmp_path / "test_file.txt"
         test_file.write_text("This is a test file.")
-        key = b'secret_key'
+        key = b"secret_key"
         mocker.patch("utils.generate_hmac.open", side_effect=IOError("Mocked IOError"))
         with pytest.raises(RuntimeError) as e:
             compute_hmac(test_file, key)

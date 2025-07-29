@@ -9,6 +9,7 @@ class MockStorage(StorageBase):
     """
     Mock implementation of StorageBase for testing purposes.
     """
+
     def upload(self) -> Path:
         """
         Mock upload method.
@@ -20,12 +21,13 @@ class MockStorage(StorageBase):
         Mock download method.
         """
         return super().download()
-    
+
 
 class TestStorageBase:
     """
     Tests for the StorageBase class.
     """
+
     @pytest.fixture
     def mock_storage(self, tmp_path, monkeypatch):
         """
@@ -36,11 +38,12 @@ class TestStorageBase:
         processed_path = tmp_path / "processed"
         processed_path.mkdir(parents=True, exist_ok=True)
         monkeypatch.setenv("MAIN_BACKUP_PATH", str(processed_path))
-        storage = MockStorage(config={"storage_type": "local", "path": str(storage_path)})
+        storage = MockStorage(
+            config={"storage_type": "local", "path": str(storage_path)}
+        )
         yield storage
         shutil.rmtree(storage_path, ignore_errors=True)
         shutil.rmtree(processed_path, ignore_errors=True)
-        
 
     def test_valid_initialization(self, mock_storage):
         """
@@ -71,7 +74,9 @@ class TestStorageBase:
         with caplog.at_level("ERROR"):
             with pytest.raises(ValueError) as excinfo:
                 MockStorage(config={"storage_type": "local", "path": str(storage_path)})
-            assert "MAIN_BACKUP_PATH environment variable is not set." in str(excinfo.value)
+            assert "MAIN_BACKUP_PATH environment variable is not set." in str(
+                excinfo.value
+            )
             assert "MAIN_BACKUP_PATH environment variable is not set." in caplog.text
 
     def test_upload_method(self, mock_storage, caplog):
@@ -91,5 +96,7 @@ class TestStorageBase:
         with caplog.at_level("ERROR"):
             with pytest.raises(NotImplementedError) as excinfo:
                 mock_storage.download()
-            assert "Download method not implemented in MockStorage" in str(excinfo.value)
+            assert "Download method not implemented in MockStorage" in str(
+                excinfo.value
+            )
             assert "Download method not implemented in MockStorage" in caplog.text

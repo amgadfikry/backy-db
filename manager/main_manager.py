@@ -21,6 +21,7 @@ class MainManager:
     It initializes the database and storage configurations, manages the backup creation,
     and handles the compression and Encryption of backup files.
     """
+
     LOGGER = LoggerManager.setup_logger("manager")
 
     @staticmethod
@@ -77,13 +78,17 @@ class MainManager:
             MainManager.LOGGER.info("Backup stored in the specified storage location")
 
         except Exception as e:
-            MainManager.LOGGER.error(f"An error occurred during the backup process: {e}")
+            MainManager.LOGGER.error(
+                f"An error occurred during the backup process: {e}"
+            )
             raise RuntimeError("Backup process failed") from e
-        
+
         finally:
             working_dir = Path(os.environ.get("MAIN_BACKUP_PATH", ""))
             if working_dir.exists():
                 delete_folder(working_dir)
                 MainManager.LOGGER.info("Working directory deleted successfully")
             else:
-                MainManager.LOGGER.warning("Working directory does not exist, nothing to delete")
+                MainManager.LOGGER.warning(
+                    "Working directory does not exist, nothing to delete"
+                )

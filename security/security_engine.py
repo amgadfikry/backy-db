@@ -16,17 +16,18 @@ class SecurityEngine:
     This class initializes the security configuration and provides methods for
     handling private and public keys
     """
+
     def __init__(self, security_config: dict):
         self.logger = LoggerManager.setup_logger("security")
         # Get the password from the security configuration or raise an error if not provided
-        self.password = security_config.get('private_key_password', None)
-        self.private_key_size = security_config.get('private_key_size', '4096')
-        self.integrity_password = security_config.get('integrity_password', None)
-        self.integrity_check = security_config.get('integrity_check', False)
-        self.compression_extension = security_config.get('compression_extension')
+        self.password = security_config.get("private_key_password", None)
+        self.private_key_size = security_config.get("private_key_size", "4096")
+        self.integrity_password = security_config.get("integrity_password", None)
+        self.integrity_check = security_config.get("integrity_check", False)
+        self.compression_extension = security_config.get("compression_extension")
 
         # Get the processing path from environment variable and set the secret path in the parent directory
-        env_path = os.getenv('MAIN_BACKUP_PATH', None)
+        env_path = os.getenv("MAIN_BACKUP_PATH", None)
         if not env_path:
             self.logger.error("MAIN_BACKUP_PATH environment variable is not set.")
             raise EnvironmentError("MAIN_BACKUP_PATH environment variable is not set.")
@@ -57,7 +58,7 @@ class SecurityEngine:
         if not private_key_path or not public_key_path:
             self.logger.info("No public or private key files found in the secret path")
             return False
-        
+
         self.logger.info("Public and private key files found in the secret path")
         return True
 
@@ -83,7 +84,9 @@ class SecurityEngine:
             private_key_bytes = private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.BestAvailableEncryption(self.password.encode())
+                encryption_algorithm=serialization.BestAvailableEncryption(
+                    self.password.encode()
+                ),
             )
 
             # Save the private key to the secret path with the version in the filename
@@ -93,13 +96,15 @@ class SecurityEngine:
             # Convert the public key to PEM format
             public_key_bytes = public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
             )
 
             # Save the public key to the secret path with the version in the filename
             with open(self.secret_path / f"public_key_{version}.pem", "wb") as f:
                 f.write(public_key_bytes)
-            self.logger.info(f"Public and private keys generated successfully with version {version}")
+            self.logger.info(
+                f"Public and private keys generated successfully with version {version}"
+            )
         except Exception as e:
             self.logger.error(f"Error generating public and private keys: {e}")
             raise RuntimeError("Failed to generate public and private keys") from e
@@ -117,17 +122,21 @@ class SecurityEngine:
         if not public_key_path:
             self.logger.error("No public key file found in the secret path.")
             raise FileNotFoundError("No public key file found in the secret path.")
-    
+
         try:
             # Get the latest version of the public key by sorting the files
-            latest_public_key = sorted(public_key_path, key=lambda x: x.stem.split('_')[-1], reverse=True)
-            version = latest_public_key[0].stem.split('_')[-1]
+            latest_public_key = sorted(
+                public_key_path, key=lambda x: x.stem.split("_")[-1], reverse=True
+            )
+            version = latest_public_key[0].stem.split("_")[-1]
 
             # Load the public key from the file
             with open(latest_public_key[0], "rb") as f:
                 public_key = serialization.load_pem_public_key(f.read())
-            
-            self.logger.info(f"Public key loaded successfully with the latest version: {version}")
+
+            self.logger.info(
+                f"Public key loaded successfully with the latest version: {version}"
+            )
             return public_key, version
 
         except Exception as e:
