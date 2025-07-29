@@ -52,24 +52,24 @@ class MainManager:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             database_name = database_config.get("db_name")
             generate_main_backup_path(subfolder=f"{database_name}_{timestamp}")
-            MainManager.LOGGER.info(f"Working directory created successfully")
+            MainManager.LOGGER.info("Working directory created successfully")
 
             # step 4: Initialize the database manager and perform the backup
             db_manager = DatabaseManager(database_config)
             db_manager.backup()
-            MainManager.LOGGER.info(f"Backup folder created successfully")
+            MainManager.LOGGER.info("Backup folder created successfully")
 
             # step 5: Initialize the compression manager and compress the backup folder
             if compression_config.get("compression"):
                 compression_manager = CompressionManager(compression_config)
                 compression_manager.compress()
-                MainManager.LOGGER.info(f"Backup compressed successfully")
+                MainManager.LOGGER.info("Backup compressed successfully")
 
             # step 6: Initialize the encryption manager and encrypt the compressed file
             if security_config.get("encryption"):
                 encryption_manager = SecurityManager(security_config)
                 encryption_manager.encrypt()
-                MainManager.LOGGER.info(f"Backup encrypted successfully")
+                MainManager.LOGGER.info("Backup encrypted successfully")
 
             # step 7: Initialize the storage manager and store the backup
             storage_manager = StorageManager(storage_config)
@@ -78,7 +78,7 @@ class MainManager:
 
         except Exception as e:
             MainManager.LOGGER.error(f"An error occurred during the backup process: {e}")
-            raise RuntimeError(f"Backup process failed") from e
+            raise RuntimeError("Backup process failed") from e
         
         finally:
             working_dir = Path(os.environ.get("MAIN_BACKUP_PATH", ""))

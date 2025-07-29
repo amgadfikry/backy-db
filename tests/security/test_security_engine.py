@@ -2,7 +2,6 @@
 import pytest
 from unittest.mock import Mock
 from security.security_engine import SecurityEngine
-from pathlib import Path
 import shutil
 import logging
 from cryptography.hazmat.primitives.asymmetric import rsa

@@ -51,7 +51,7 @@ class TestBackupSchema:
         Test that an invalid database configuration raises a validation error.
         """
         valid_config['database']['db_type'] = 'invalid_db_type'
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValueError):
             config = DatabaseConfig(**valid_config['database'])
             assert config is None
 
@@ -60,7 +60,7 @@ class TestBackupSchema:
         Test that missing required fields in the database configuration raises a validation error.
         """
         del valid_config['database']['host']
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValueError):
             config = DatabaseConfig(**valid_config['database'])
             assert config is None
 
@@ -108,7 +108,7 @@ class TestBackupSchema:
         Test that enabling encryption without a password raises an error.
         """
         with caplog.at_level("ERROR"):
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(ValueError):
                 config = SecurityConfig(encryption=True)
                 assert config.encryption is True
                 assert "Private key password must be set if encryption is enabled." in caplog.text
@@ -128,7 +128,7 @@ class TestBackupSchema:
         Test that enabling integrity check without a password raises an error.
         """
         with caplog.at_level("ERROR"):
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(ValueError):
                 config = SecurityConfig(
                     encryption=True,
                     integrity_check=True,
@@ -189,10 +189,10 @@ class TestBackupSchema:
         backup_config = BackupConfig(**valid_config)
         assert backup_config.security.encryption is False
         assert backup_config.compression.compression is False
-        assert backup_config.security.private_key_size == None
+        assert backup_config.security.private_key_size is None
         assert backup_config.security.integrity_check is False
         assert backup_config.security.integrity_password is None
-        assert backup_config.security.private_key_password == None
+        assert backup_config.security.private_key_password is None
 
     def test_security_file_extension_when_compression(self, valid_config):
         """

@@ -1,6 +1,5 @@
 # tests/utils/test_to_sql_values.py
-import pytest
-from utils.to_sql_values import format_value, to_sql_values
+from utils.to_sql_values import to_sql_values
 from datetime import datetime, date, time
 from decimal import Decimal
 from uuid import UUID
@@ -74,11 +73,11 @@ class TestToSQLValues:
         Test that dict and list values are converted to JSON strings.
         """
         d = {'key': 'value'}
-        l = [1, 2, 3]
+        li = [1, 2, 3]
         assert to_sql_values((d,)) == f"'{json.dumps(d).replace("'", "''")}'"
-        assert to_sql_values((l,)) == f"'{json.dumps(l).replace("'", "''")}'"
-        assert to_sql_values((d, l)) == f"'{json.dumps(d).replace("'", "''")}', '{json.dumps(l).replace("'", "''")}'"
-        assert to_sql_values((l, d)) == f"'{json.dumps(l).replace("'", "''")}', '{json.dumps(d).replace("'", "''")}'"
+        assert to_sql_values((li,)) == f"'{json.dumps(li).replace("'", "''")}'"
+        assert to_sql_values((d, li)) == f"'{json.dumps(d).replace("'", "''")}', '{json.dumps(li).replace("'", "''")}'"
+        assert to_sql_values((li, d)) == f"'{json.dumps(li).replace("'", "''")}', '{json.dumps(d).replace("'", "''")}'"
 
     def test_to_sql_values_string_escaping(self):
         """

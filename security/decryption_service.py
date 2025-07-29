@@ -37,7 +37,7 @@ class DecryptionService(SecurityEngine):
                     password=self.password.encode()
                 )
 
-            self.logger.info(f"Private key loaded successfully")
+            self.logger.info("Private key loaded successfully")
             return private_key
         except Exception as e:
             self.logger.error(f"Error loading private key: {e}")

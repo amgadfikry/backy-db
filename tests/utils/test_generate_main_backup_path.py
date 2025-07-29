@@ -1,7 +1,6 @@
 # tests/utils/test_generate_main_backup_path.py
 import pytest
 from utils.generate_main_backup_path import generate_main_backup_path
-from pathlib import Path
 import os
 import platform
 

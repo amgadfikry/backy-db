@@ -52,7 +52,7 @@ class EncryptionService(SecurityEngine):
             if compress_file.exists():
                 compress_file.unlink()
 
-            self.logger.info(f"File encrypted successfully and saved")
+            self.logger.info("File encrypted successfully and saved")
             return key
 
         except Exception as e:
@@ -93,7 +93,7 @@ class EncryptionService(SecurityEngine):
             with open(encrypted_file_path, 'wb') as file:
                 file.write(encrypted_symmetric_key)
         
-            self.logger.info(f"Symmetric key encrypted successfully and saved to file")
+            self.logger.info("Symmetric key encrypted successfully and saved to file")
             return encrypted_file_path
         
         except Exception as e:

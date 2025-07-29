@@ -224,7 +224,7 @@ class MySQLDatabase(DatabaseBase):
             self.logger.error(f"Error retrieving data insertion statements: {e}")
             raise RuntimeError(f"Failed to retrieve data insertion statements: {e}")
 
-        self.logger.info(f"Data insertion statements retrieved successfully for all tables.")
+        self.logger.info("Data insertion statements retrieved successfully for all tables.")
         return "\n".join(data_statements) + "\n" if data_statements else ""
 
     def create_views_statements(self, cursor: mysql.connector.cursor) -> str:

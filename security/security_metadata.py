@@ -38,7 +38,7 @@ class SecurityMetadata(SecurityEngine):
             with open(metadata_file_path, "w") as f:
                 json.dump(metadata, f, indent=4)
 
-            self.logger.info(f"Metadata file created successfully")
+            self.logger.info("Metadata file created successfully")
             return metadata_file_path
     
         except Exception as e:
@@ -88,7 +88,7 @@ class SecurityMetadata(SecurityEngine):
                     checksum = compute_hmac(file, self.integrity_password.encode())
                     f.write(f"{checksum}  {file.name}\n")
 
-            self.logger.info(f"Integrity file created successfully")
+            self.logger.info("Integrity file created successfully")
             return integrity_file_path
         except Exception as e:
             self.logger.error(f"Error creating integrity file: {e}")
