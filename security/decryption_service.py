@@ -1,10 +1,9 @@
 # security/decryption_service.py
 from security.security_engine import SecurityEngine
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.ciphers import AESGCM
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives import hashes
-
 import json
 from pathlib import Path
 
@@ -15,7 +14,7 @@ class DecryptionService(SecurityEngine):
     Inherits from SecurityEngine to utilize its methods.
     """
 
-    def __decrypt_private_key(self, version: str = "v1") -> rsa.RSAPrivateKey:
+    def _decrypt_private_key(self, version: str = "v1") -> rsa.RSAPrivateKey:
         """
         Decrypt the private key using the password.
         1. Load the private key from the secret path.
@@ -57,26 +56,28 @@ class DecryptionService(SecurityEngine):
         metadata_file = self.processing_path / "metadata.json"
         encrypted_key_path = list(self.processing_path.glob("encryption_key_*.enc"))
 
-        # Ensure the metadata file exists and the encrypted key file exists
-        if not metadata_file.exists():
-            self.logger.error("Metadata file does not exist.")
-            raise FileNotFoundError("Metadata file does not exist.")
+        # Ensure the encrypted key file exists
         if not encrypted_key_path:
             self.logger.error("Encrypted symmetric key file does not exist.")
             raise FileNotFoundError("Encrypted symmetric key file does not exist.")
 
         try:
-            # Load the metadata to get the version of the private key
-            # Or use the version from the encrypted key file name as fallback
-            with open(metadata_file, "r") as f:
-                metadata = json.load(f)
-            version = metadata.get("version", None)
+            # Load the metadata to get the version of the private key if metadata exists
+            version = None
+            if metadata_file.exists():
+                with open(metadata_file, "r") as f:
+                    metadata = json.load(f)
+                version = metadata.get("version", None)
+            else:
+                self.logger.warning("Metadata file does not exist")
+            # If version is not specified, use the first encrypted key file's version
             if not version:
                 version = encrypted_key_path[0].stem.split("_")[-1]
 
             # Decrypt the private key using the version and check if it loaded successfully
-            private_key = self.__decrypt_private_key(version)
+            private_key = self._decrypt_private_key(version)
             if not private_key:
+                self.logger.error("Private key is not loaded.")
                 raise ValueError("Private key is not loaded.")
 
             # Read the encrypted symmetric key
@@ -97,6 +98,8 @@ class DecryptionService(SecurityEngine):
             return decrypted_symmetric_key
 
         except Exception as e:
+            if isinstance(e, ValueError):
+                raise e
             self.logger.error(f"Error decrypting symmetric key: {e}")
             raise RuntimeError("Failed to decrypt symmetric key") from e
 
