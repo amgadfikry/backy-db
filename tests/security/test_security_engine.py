@@ -27,7 +27,7 @@ class TestSecurityEngine:
             "private_key_size": "2048",
             "integrity_password": "test_integrity_password",
             "integrity_check": True,
-            "compression_extension": ".zip",
+            "file_extension": ".zip",
         }
         yield config, mock_main_backup_path
         # Cleanup after tests
