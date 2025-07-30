@@ -77,14 +77,17 @@ class TestDatabaseMetadata:
         metadata_database, backup_path = setup_method
         timestamp = "2023-10-01_12-00-00"
         metadata_database.create_backup_folder(timestamp)
-        
+
         # Create a dummy file in the backup folder
         (metadata_database.backup_folder_path / "dummy_file.txt").touch()
 
         metadata_file = metadata_database.create_metadata_file(timestamp)
         assert metadata_file.exists()
-        assert metadata_file.name == f"{metadata_database.db_name}_{timestamp}_metadata.json"
-        with open(metadata_file, 'r') as f:
+        assert (
+            metadata_file.name
+            == f"{metadata_database.db_name}_{timestamp}_metadata.json"
+        )
+        with open(metadata_file, "r") as f:
             metadata = json.load(f)
         assert metadata["db_type"] == metadata_database.db_type
         assert metadata["version"] == metadata_database.version
@@ -117,7 +120,7 @@ class TestDatabaseMetadata:
 
         with pytest.raises(FileNotFoundError) as exc_info:
             metadata_database.create_metadata_file(timestamp)
-        
+
         assert str(exc_info.value) == "No backup files found in the backup folder."
         assert "No backup files found to create metadata." in caplog.text
 
@@ -136,7 +139,7 @@ class TestDatabaseMetadata:
 
         with pytest.raises(RuntimeError) as exc_info:
             metadata_database.create_metadata_file(timestamp)
-        
+
         assert "Failed to create metadata file" in str(exc_info.value)
         assert "Error creating metadata file: Mocked error" in caplog.text
 
@@ -147,22 +150,27 @@ class TestDatabaseMetadata:
         metadata_database, backup_path = setup_method
         timestamp = "2023-10-01_12-00-00"
         metadata_database.create_backup_folder(timestamp)
-        
+
         # Create a dummy file in the backup folder
         (metadata_database.backup_folder_path / "dummy_file1.txt").touch()
         (metadata_database.backup_folder_path / "dummy_file2.txt").touch()
-        mocker.patch("databases.database_metadata.generate_sha256", return_value="dummy_checksum")
+        mocker.patch(
+            "databases.database_metadata.generate_sha256", return_value="dummy_checksum"
+        )
 
         checksum_file = metadata_database.create_checksum_file(timestamp)
         assert checksum_file.exists()
-        assert checksum_file.name == f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
-        
-        with open(checksum_file, 'r') as f:
+        assert (
+            checksum_file.name
+            == f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        )
+
+        with open(checksum_file, "r") as f:
             content = f.read().strip().splitlines()
         assert len(content) == 2
         assert content[0] == "dummy_checksum  dummy_file1.txt"
         assert content[1] == "dummy_checksum  dummy_file2.txt"
-        
+
     def test_create_checksum_file_no_files(self, setup_method, caplog):
         """
         Test the creation of a checksum file when no backup files are present.
@@ -184,7 +192,7 @@ class TestDatabaseMetadata:
         metadata_database, _ = setup_method
         timestamp = "2023-10-01_12-00-00"
         metadata_database.create_backup_folder(timestamp)
-        
+
         # Create a dummy file in the backup folder
         (metadata_database.backup_folder_path / "dummy_file.txt").touch()
 
@@ -204,13 +212,20 @@ class TestDatabaseMetadata:
         metadata_database, backup_path = setup_method
         timestamp = "2023-10-01_12-00-00"
         metadata_database.create_backup_folder(timestamp)
-        
+
         # Create dummy files and a checksum file
-        (metadata_database.backup_folder_path / "dummy_file1.txt").write_text("test data 1")
-        (metadata_database.backup_folder_path / "dummy_file2.txt").write_text("test data 2")
-        
+        (metadata_database.backup_folder_path / "dummy_file1.txt").write_text(
+            "test data 1"
+        )
+        (metadata_database.backup_folder_path / "dummy_file2.txt").write_text(
+            "test data 2"
+        )
+
         files = metadata_database.backup_folder_path.glob("*")
-        checksum_file = metadata_database.backup_folder_path / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        checksum_file = (
+            metadata_database.backup_folder_path
+            / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        )
 
         with open(checksum_file, "w", encoding="utf-8") as f:
             for file in files:
@@ -245,9 +260,12 @@ class TestDatabaseMetadata:
         metadata_database, backup_path = setup_method
         timestamp = "2023-10-01_12-00-00"
         metadata_database.create_backup_folder(timestamp)
-        
+
         # Create a dummy checksum file
-        checksum_file = metadata_database.backup_folder_path / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        checksum_file = (
+            metadata_database.backup_folder_path
+            / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        )
         checksum_file.write_text("dummy_checksum  non_existent_file.txt\n")
 
         with pytest.raises(FileNotFoundError) as exc_info:
@@ -266,7 +284,10 @@ class TestDatabaseMetadata:
 
         # Create a dummy file in the backup folder
         (metadata_database.backup_folder_path / "dummy_file.txt").touch()
-        checksum_file = metadata_database.backup_folder_path / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        checksum_file = (
+            metadata_database.backup_folder_path
+            / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        )
         checksum_file.write_text("invalid_checksum  dummy_file.txt\n")
 
         with pytest.raises(ValueError) as exc_info:
@@ -284,7 +305,10 @@ class TestDatabaseMetadata:
         metadata_database.create_backup_folder(timestamp)
 
         # Create a dummy checksum file
-        checksum_file = metadata_database.backup_folder_path / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        checksum_file = (
+            metadata_database.backup_folder_path
+            / f"{metadata_database.db_name}_{timestamp}_checksum.sha256"
+        )
         checksum_file.write_text("dummy_checksum  dummy_file.txt\n")
 
         # Mock the open function to raise an error
