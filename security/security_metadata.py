@@ -28,14 +28,14 @@ class SecurityMetadata(SecurityEngine):
             "HMAC": "SHA256",
             "Nonce": "12 bytes",
             "symmetric_key": "256 bits",
-            "private_key_size": "4096 bits",
+            "private_key_size": self.private_key_size,
             "encryption_type": "symmetric + asymmetric + password",
             "description": "This metadata file contains information about the encryption process.",
         }
 
         try:
             # Create the metadata file in the processing path
-            metadata_file_path = self.processing_path / "metadata.json"
+            metadata_file_path = self.processing_path / "security_metadata.json"
             with open(metadata_file_path, "w") as f:
                 json.dump(metadata, f, indent=4)
 
@@ -65,13 +65,16 @@ class SecurityMetadata(SecurityEngine):
                 f"Public key file {public_key_name} does not exist in the secret path."
             )
 
-        # Copy the public key file to the processing path
-        shutil.copy2(public_key_path, self.processing_path)
-
-        self.logger.info(
-            f"Public key file {public_key_name} copied to the processing path"
-        )
-        return self.processing_path / public_key_name
+        try:
+            # Copy the public key file to the processing path
+            shutil.copy2(public_key_path, self.processing_path)
+            self.logger.info(
+                f"Public key file {public_key_name} copied to the processing path"
+            )
+            return self.processing_path / public_key_name
+        except Exception as e:
+            self.logger.error(f"Error copying public key: {e}")
+            raise RuntimeError("Failed to copy public key") from e
 
     def create_integrity_file(self) -> Path:
         """
@@ -88,10 +91,12 @@ class SecurityMetadata(SecurityEngine):
 
         try:
             # Create the integrity file path
-            integrity_file_path = self.processing_path / "integrity.sha256"
+            integrity_file_path = self.processing_path / "integrity.hmac"
             # Write the checksums to the integrity file with name and checksum
             with open(integrity_file_path, "w", encoding="utf-8") as f:
                 for file in files:
+                    if file.name == "integrity.hmac":
+                        continue
                     checksum = compute_hmac(file, self.integrity_password.encode())
                     f.write(f"{checksum}  {file.name}\n")
 
@@ -109,7 +114,7 @@ class SecurityMetadata(SecurityEngine):
             bool: True if all files match their checksums, False otherwise.
         """
         # Get the integrity file and ensure it exists
-        integrity_file_path = self.processing_path / "integrity.sha256"
+        integrity_file_path = self.processing_path / "integrity.hmac"
         if not integrity_file_path.exists():
             self.logger.error("Integrity file does not exist in the processing path.")
             raise FileNotFoundError(
@@ -122,7 +127,7 @@ class SecurityMetadata(SecurityEngine):
                 for line in f:
                     checksum, filename = line.strip().split()
                     # Skip the integrity file itself
-                    if filename == "integrity.sha256":
+                    if filename == "integrity.hmac":
                         continue
                     # Get the file path and ensure it exists
                     file_path = self.processing_path / filename
@@ -139,10 +144,12 @@ class SecurityMetadata(SecurityEngine):
                     )
                     if computed_checksum != checksum:
                         self.logger.error(f"Checksum mismatch for file {filename}")
-                        return False
+                        raise ValueError(f"Checksum mismatch for file {filename}")
             self.logger.info("Integrity check passed for all files")
             return True
 
         except Exception as e:
+            if isinstance(e, FileNotFoundError) or isinstance(e, ValueError):
+                raise e
             self.logger.error(f"Error verifying integrity: {e}")
             raise RuntimeError("Failed to verify integrity") from e
