@@ -138,9 +138,8 @@ class DatabaseBase(ABC):
                 f.write(f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`;\n")
                 f.write(f"USE `{self.db_name}`;\n\n")
                 f.write(content)
+            self.logger.info(f"{backup_file.name} created successfully with content.")
+            return backup_file
         except Exception as e:
             self.logger.error(f"Error creating backup file {backup_file.name}: {e}")
             raise RuntimeError("Failed to create backup file") from e
-
-        self.logger.info(f"{backup_file.name} created successfully with content.")
-        return backup_file
