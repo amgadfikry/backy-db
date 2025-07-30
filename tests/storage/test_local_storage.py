@@ -1,4 +1,3 @@
-
 import pytest
 from storage.local_storage import LocalStorage
 import shutil
@@ -49,7 +48,10 @@ class TestLocalStorage:
         """
         local_storage, _, _ = local_storage_setup
         # Simulate shutil.copytree raising an exception
-        mocker.patch("storage.local_storage.shutil.copytree", side_effect=OSError("Disk full error"))
+        mocker.patch(
+            "storage.local_storage.shutil.copytree",
+            side_effect=OSError("Disk full error"),
+        )
         with caplog.at_level("ERROR"):
             with pytest.raises(RuntimeError) as excinfo:
                 local_storage.upload()
@@ -77,7 +79,10 @@ class TestLocalStorage:
         """
         local_storage, _, _ = local_storage_setup
         # Simulate shutil.copytree raising an exception
-        mocker.patch("storage.local_storage.shutil.copytree", side_effect=OSError("Network error"))
+        mocker.patch(
+            "storage.local_storage.shutil.copytree",
+            side_effect=OSError("Network error"),
+        )
         with caplog.at_level("ERROR"):
             with pytest.raises(RuntimeError) as excinfo:
                 local_storage.download()

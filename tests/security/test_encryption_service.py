@@ -1,13 +1,9 @@
 # tests/security/testencryption_service.py
 import pytest
-from unittest.mock import Mock
 from security.encryption_service import EncryptionService
 from pathlib import Path
 import shutil
-import logging
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-import os
 
 
 class TestEncryptionService:
@@ -27,10 +23,16 @@ class TestEncryptionService:
         # Create a dummy public key for testing
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         public_key = private_key.public_key()
-        
+
         # Mock SecurityEngine's initialization to prevent actual key generation/loading
-        mocker.patch("security.security_engine.SecurityEngine._check_keys_exist", return_value=True)
-        mocker.patch("security.security_engine.SecurityEngine._load_public_key", return_value=(public_key, "v1"))
+        mocker.patch(
+            "security.security_engine.SecurityEngine._check_keys_exist",
+            return_value=True,
+        )
+        mocker.patch(
+            "security.security_engine.SecurityEngine._load_public_key",
+            return_value=(public_key, "v1"),
+        )
         config = {
             "private_key_password": "test_password",
             "private_key_size": "2048",
@@ -57,11 +59,15 @@ class TestEncryptionService:
         # Assertions
         assert isinstance(symmetric_key, bytes)
         assert len(symmetric_key) == 32
-        encrypted_file_path = processing_path / f"backup.{service.compression_extension}.enc"
+        encrypted_file_path = (
+            processing_path / f"backup.{service.compression_extension}.enc"
+        )
         assert encrypted_file_path.exists()
         assert not mock_zip_file.exists()
 
-    def test_encrypt_using_symmetric_key_no_file_found(self, encryption_service_setup, caplog):
+    def test_encrypt_using_symmetric_key_no_file_found(
+        self, encryption_service_setup, caplog
+    ):
         """
         Test that encrypt_using_symmetric_key raises FileNotFoundError if no compressed file is found.
         """
@@ -72,25 +78,35 @@ class TestEncryptionService:
             assert "No zip file found in the processing path." in str(excinfo.value)
             assert "No zip file found in the processing path." in caplog.text
 
-    def test_encrypt_using_symmetric_key_failure(self, encryption_service_setup, mocker, caplog):
+    def test_encrypt_using_symmetric_key_failure(
+        self, encryption_service_setup, mocker, caplog
+    ):
         """
         Test that encrypt_using_symmetric_key handles exceptions during encryption.
         """
-        service, processing_path, _ = encryption_service_setup 
+        service, processing_path, _ = encryption_service_setup
 
         # Create a mock compressed file
         mock_zip_file = processing_path / f"backup.{service.compression_extension}"
         mock_zip_file.write_bytes(b"mock_backup_data")
 
         # Mock AESGCM to raise an exception during encryption
-        mocker.patch("security.encryption_service.AESGCM.encrypt", side_effect=Exception("Mock encryption error"))
+        mocker.patch(
+            "security.encryption_service.AESGCM.encrypt",
+            side_effect=Exception("Mock encryption error"),
+        )
         with caplog.at_level("ERROR"):
             with pytest.raises(RuntimeError) as excinfo:
                 service.encrypt_using_symmetric_key()
             assert "Failed to encrypt data with symmetric key" in str(excinfo.value)
-            assert "Error during encryption data with symmetric key: Mock encryption error" in caplog.text
+            assert (
+                "Error during encryption data with symmetric key: Mock encryption error"
+                in caplog.text
+            )
 
-    def test_encrypt_symmetric_key_with_public_key_success(self, encryption_service_setup):
+    def test_encrypt_symmetric_key_with_public_key_success(
+        self, encryption_service_setup
+    ):
         """
         Test that encrypt_symmetric_key_with_public_key successfully encrypts the symmetric key.
         """
@@ -98,7 +114,9 @@ class TestEncryptionService:
         symmetric_key = b"test_symmetric_key"
 
         # Call the method to encrypt the symmetric key
-        encrypted_key_path = service.encrypt_symmetric_key_with_public_key(symmetric_key)
+        encrypted_key_path = service.encrypt_symmetric_key_with_public_key(
+            symmetric_key
+        )
         # Assertions
         assert isinstance(encrypted_key_path, Path)
         assert encrypted_key_path.exists()
@@ -106,7 +124,9 @@ class TestEncryptionService:
         files_in_processing_path = list(processing_path.glob("encryption_key_*.enc"))
         assert len(files_in_processing_path) == 1
 
-    def test_encrypt_symmetric_key_with_public_key_no_public_key(self, encryption_service_setup, caplog):
+    def test_encrypt_symmetric_key_with_public_key_no_public_key(
+        self, encryption_service_setup, caplog
+    ):
         """
         Test that encrypt_symmetric_key_with_public_key raises ValueError if public key is not loaded.
         """
@@ -119,17 +139,26 @@ class TestEncryptionService:
             assert "Public key is not loaded." in str(excinfo.value)
             assert "Public key is not loaded." in caplog.text
 
-    def test_encrypt_symmetric_key_with_public_key_failure(self, encryption_service_setup, mocker, caplog):
+    def test_encrypt_symmetric_key_with_public_key_failure(
+        self, encryption_service_setup, mocker, caplog
+    ):
         """
         Test that encrypt_symmetric_key_with_public_key handles exceptions during encryption.
         """
         service, _, public_key = encryption_service_setup
         symmetric_key = b"test_symmetric_key"
 
-        mocker.patch("security.encryption_service.open", side_effect=Exception("Mock open error"))
+        mocker.patch(
+            "security.encryption_service.open", side_effect=Exception("Mock open error")
+        )
 
         with caplog.at_level("ERROR"):
             with pytest.raises(RuntimeError) as excinfo:
                 service.encrypt_symmetric_key_with_public_key(symmetric_key)
-            assert "Failed to encrypt symmetric key with public key" in str(excinfo.value)
-            assert "Error encrypting symmetric key with public key: Mock open error" in caplog.text
+            assert "Failed to encrypt symmetric key with public key" in str(
+                excinfo.value
+            )
+            assert (
+                "Error encrypting symmetric key with public key: Mock open error"
+                in caplog.text
+            )
