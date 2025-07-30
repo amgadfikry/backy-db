@@ -24,7 +24,7 @@ class SecurityEngine:
         self.private_key_size = security_config.get("private_key_size", "4096")
         self.integrity_password = security_config.get("integrity_password", None)
         self.integrity_check = security_config.get("integrity_check", False)
-        self.compression_extension = security_config.get("compression_extension")
+        self.compression_extension = security_config.get("file_extension", None)
 
         # Get the processing path from environment variable and set the secret path in the parent directory
         env_path = os.getenv("MAIN_BACKUP_PATH", None)
