@@ -2,11 +2,11 @@
 from pathlib import Path
 from typing import Dict
 import json
-from databases.database_base import DatabaseBase
+from databases.database_context import DatabaseContext
 from utils.generate_checksum import generate_sha256
 
 
-class DatabaseMetadata(DatabaseBase):
+class DatabaseMetadata(DatabaseContext):
     """
     Class to manage database metadata for the Backy project
     This class extends the DatabaseBase class and provides methods to handle
@@ -28,14 +28,13 @@ class DatabaseMetadata(DatabaseBase):
             )
             backup_folder.mkdir(parents=True, exist_ok=True)
             self.backup_folder_path = backup_folder
+            self.logger.info(
+                f"Backup folder created successfully at {self.backup_folder_path}"
+            )
+            return self.backup_folder_path
         except Exception as e:
             self.logger.error(f"Error creating backup folder: {e}")
             raise RuntimeError("Failed to create backup folder") from e
-
-        self.logger.info(
-            f"Backup folder created successfully at {self.backup_folder_path}"
-        )
-        return self.backup_folder_path
 
     def create_metadata_file(self, timestamp: str) -> Path:
         """
@@ -82,12 +81,11 @@ class DatabaseMetadata(DatabaseBase):
         try:
             with open(metadata_file, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=4)
+            self.logger.info(f"Metadata file created successfully at {metadata_file}")
+            return metadata_file
         except Exception as e:
             self.logger.error(f"Error creating metadata file: {e}")
             raise RuntimeError("Failed to create metadata file") from e
-
-        self.logger.info(f"Metadata file created successfully at {metadata_file}")
-        return metadata_file
 
     def create_checksum_file(self, timestamp: str) -> Path:
         """
@@ -112,11 +110,48 @@ class DatabaseMetadata(DatabaseBase):
         try:
             with open(checksum_file, "w", encoding="utf-8") as f:
                 for file in backup_files:
+                    if file.name == checksum_file.name:
+                        continue
                     checksum = generate_sha256(file)
                     f.write(f"{checksum}  {file.name}\n")
+            self.logger.info(f"Checksum file created successfully at {checksum_file}")
+            return checksum_file
         except Exception as e:
             self.logger.error(f"Error creating checksum file: {e}")
             raise RuntimeError("Failed to create checksum file") from e
 
-        self.logger.info(f"Checksum file created successfully at {checksum_file}")
-        return checksum_file
+    def verify_checksum_file(self):
+        """
+        Verify the integrity of the backup files using the checksum file.
+        This method will read the checksum file and compare it with the actual files.
+        Returns:
+            bool: True if all files match their checksums, False otherwise.
+        """
+        checksum_files = list(
+            self.backup_folder_path.glob(f"{self.db_name}_*_checksum.sha256")
+        )
+        if not checksum_files:
+            self.logger.error("Checksum file does not exist.")
+            raise FileNotFoundError("Checksum file does not exist.")
+
+        try:
+            with open(checksum_files[0], "r", encoding="utf-8") as f:
+                for line in f:
+                    checksum, filename = line.strip().split("  ")
+                    if filename == checksum_files[0].name:
+                        continue
+                    file_path = self.backup_folder_path / filename
+                    if not file_path.exists():
+                        self.logger.error(f"File {filename} does not exist.")
+                        raise FileNotFoundError(f"File {filename} does not exist.")
+                    actual_checksum = generate_sha256(file_path)
+                    if actual_checksum != checksum:
+                        self.logger.error(f"Checksum mismatch for {filename}")
+                        raise ValueError(f"Checksum mismatch for {filename}")
+            self.logger.info("All files verified successfully against checksums.")
+            return True
+        except Exception as e:
+            if isinstance(e, FileNotFoundError) or isinstance(e, ValueError):
+                raise e
+            self.logger.error(f"Error verifying checksum file: {e}")
+            raise RuntimeError("Failed to verify checksum file") from e
