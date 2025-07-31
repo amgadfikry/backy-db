@@ -22,7 +22,7 @@ class DatabaseManager:
         args:
             database_config (dict): Configuration dictionary for the database.
         """
-        self.logger = LoggerManager.get_logger("database")
+        self.logger = LoggerManager.setup_logger("database")
         database_type = database_config.get("db_type").lower()
         if database_type not in self.DATABASES:
             self.logger.error(f"Unsupported database type: {database_type}")
@@ -54,13 +54,13 @@ class DatabaseManager:
                 self.logger.error(
                     "No backup files were created during the backup process."
                 )
-                raise RuntimeError("No backup files were created.")
+                raise FileNotFoundError("No backup files were created.")
             self.logger.info(f"Backup files created: {backup_files}")
 
             # Create metadata and checksum files
-            metadata_file = self.metadata.create_metadata(timestamp)
+            metadata_file = self.metadata.create_metadata_file(timestamp)
             self.logger.info(f"Metadata file created at: {metadata_file}")
-            checksum_file = self.metadata.create_checksum(timestamp)
+            checksum_file = self.metadata.create_checksum_file(backup_files)
             self.logger.info(f"Checksum file created at: {checksum_file}")
 
             # Close the database connection
@@ -71,6 +71,8 @@ class DatabaseManager:
             self.logger.info("Database backup process completed successfully.")
             return backup_folder
         except Exception as e:
+            if isinstance(e, FileNotFoundError):
+                raise e
             self.logger.error(f"Error during backup process: {e}")
             raise RuntimeError(f"Failed to perform backup: {e}")
 
