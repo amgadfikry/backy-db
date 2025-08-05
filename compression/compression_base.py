@@ -1,11 +1,7 @@
 # compression/compression_base.py
 from pathlib import Path
-from dotenv import load_dotenv
-import os
 from abc import ABC, abstractmethod
 from logger.logger_manager import LoggerManager
-
-load_dotenv()
 
 
 class CompressionBase(ABC):
@@ -32,8 +28,7 @@ class CompressionBase(ABC):
             self.logger.error(f"Unsupported compression type: {self.compression_type}")
             raise ValueError(f"Unsupported compression type: {self.compression_type}")
         self.extension = self.SUPPORTED_TYPES[self.compression_type]
-        self.processing_path = Path(os.getenv("MAIN_BACKUP_PATH"))
-
+    
     @abstractmethod
     def compress_folder(self, folder_path: Path) -> Path:
         """
