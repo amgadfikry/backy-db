@@ -1,11 +1,7 @@
 # storage/storage_base.py
 from abc import ABC, abstractmethod
 from pathlib import Path
-from dotenv import load_dotenv
-import os
 from logger.logger_manager import LoggerManager
-
-load_dotenv()
 
 
 class StorageBase(ABC):
@@ -15,27 +11,23 @@ class StorageBase(ABC):
     classes should implement.
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, db_name: str = "backy_db"):
         """
         Initialize the storage with the given configuration.
         Args:
             config: Configuration dictionary for the storage.
         """
+        self.db_name = db_name
         self.logger = LoggerManager.setup_logger("storage")
-        self.storage_type = config.get("storage_type", "local")
-        self.path = Path(config.get("path", None))
-        if not self.path or not self.path.exists():
-            self.logger.error("Storage path is not set or does not exist.")
-            raise ValueError("Storage path is not set or does not exist.")
-        self.processed_path = Path(os.getenv("MAIN_BACKUP_PATH", None))
-        if not self.processed_path or not self.processed_path.exists():
-            self.logger.error("MAIN_BACKUP_PATH environment variable is not set.")
-            raise ValueError("MAIN_BACKUP_PATH environment variable is not set.")
 
     @abstractmethod
-    def upload(self) -> Path:
+    def upload(self, file_path: str) -> str:
         """
         Upload a file from local path to remote storage.
+        Args:
+            file_path (str): The path to the file to be uploaded.
+        Returns:
+            str: The path to the uploaded file in remote storage.
         """
         self.logger.error(f"Upload method not implemented in {self.__class__.__name__}")
         raise NotImplementedError(
@@ -43,9 +35,13 @@ class StorageBase(ABC):
         )
 
     @abstractmethod
-    def download(self) -> Path:
+    def download(self, file_path: str) -> str:
         """
         Download a file from remote storage to the local path.
+        Args:
+            file_path (str): The path to the file to be downloaded.
+        Returns:
+            str: The path to the downloaded file in local storage.
         """
         self.logger.error(
             f"Download method not implemented in {self.__class__.__name__}"
@@ -53,3 +49,41 @@ class StorageBase(ABC):
         raise NotImplementedError(
             f"Download method not implemented in {self.__class__.__name__}"
         )
+
+    @abstractmethod
+    def validate_credentials(self) -> bool:
+        """
+        Validate the credentials for the storage.
+        Returns:
+            bool: True if credentials are valid, False otherwise.
+        """
+        self.logger.error(
+            f"Validate credentials method not implemented in {self.__class__.__name__}"
+        )
+        raise NotImplementedError(
+            f"Validate credentials method not implemented in {self.__class__.__name__}"
+        )
+
+    @abstractmethod
+    def delete(self, file_path: str) -> None:
+        """
+        Delete a file from remote storage.
+        Args:
+            file_path (str): The path to the file to be deleted.
+        """
+        self.logger.error(f"Delete method not implemented in {self.__class__.__name__}")
+        raise NotImplementedError(
+            f"Delete method not implemented in {self.__class__.__name__}"
+        )
+
+    def generate_dest_path(self, file_path: str) -> str:
+        """
+        Generate a destination path for the file based on the database name and current timestamp.
+        Args:
+            file_path (str): The path to the file.
+        Returns:
+            str: The generated destination path.
+        """
+        db_name = self.db_name.replace(" ", "_").lower()
+        filename = Path(file_path).name.replace(" ", "_").lower()
+        return f"backy_backups/{db_name}/{filename}"
