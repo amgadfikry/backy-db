@@ -1,64 +1,97 @@
 # security/security_manager.py
-from security.encryption_service import EncryptionService
-from security.decryption_service import DecryptionService
-from security.security_metadata import SecurityMetadata
 from logger.logger_manager import LoggerManager
+from security.engine.security_engine import SecurityEngine
+from security.services.encryption_service import EncryptionService
+from security.services.decryption_service import DecryptionService
+from typing import Tuple
 
 
 class SecurityManager:
     """
-    A composite class that combines security operations, encryption, decryption,
-    and metadata handling.
+    SecurityManager is responsible for managing the security operations
+    such as encryption and decryption of data using the SecurityEngine.
+    It provides a high-level interface to interact with the security engine.
     """
 
     def __init__(self, security_config: dict):
         """
         Initialize the SecurityManager with the provided security configuration.
+        This loads the symmetric key, encrypted symmetric key, and key ID
+        from the SecurityEngine.
+        It also sets up the encryption and decryption services.
         Args:
-            security_config (dict): The security configuration dictionary.
+            security_config (dict): Configuration settings for the security engine.
+                - Contains type, provider, key_size, key_version, and encryption_file.
         """
-        self.logger = LoggerManager.setup_logger("security")
-        self.config = security_config
-        self.metadata_service = SecurityMetadata(self.config)
+        self.logger = LoggerManager.setup_logger("security_manager")
+        self.security_config = security_config
+        self.__symmetric_key = None
+        self.encrypted_symmetric_key = None
+        self.key_id = None
+        self.encryptor = EncryptionService()
+        self.decryptor = DecryptionService()
+        self.load_keys()
 
-    def encryption(self) -> None:
+    def load_keys(self):
         """
-        Perform the encryption process.
-        1. Encrypt the file using a symmetric key.
-        2. Encrypt the symmetric key using the public key.
-        3. Create metadata for the encrypted files.
-        4. Copy the public key to the processing path.
-        5. Check the integrity-check if enabled add integrity check file
+        Load the symmetric key, encrypted symmetric key, and key ID
+        from the SecurityEngine based on the provided security configuration.
+        This method initializes the SecurityEngine and retrieves the keys.
         """
-        try:
-            encryption_service = EncryptionService(self.config)
-            symmetric_key = encryption_service.encrypt_using_symmetric_key()
-            encryption_service.encrypt_symmetric_key_with_public_key(symmetric_key)
-            self.metadata_service.create_metadata()
-            self.metadata_service.copy_public_key()
-            if self.config.get("integrity_check", False):
-                self.metadata_service.create_integrity_file()
-            self.logger.info("Encryption completed successfully")
-        except Exception as e:
-            self.logger.error(f"Encryption failed: {e}")
-            raise e
+        engine = SecurityEngine(self.security_config)
+        symmetric_key, encrypted_key, key_id = engine.get_keys()
+        self.__symmetric_key = symmetric_key
+        self.encrypted_symmetric_key = encrypted_key
+        self.key_id = key_id
 
-    def decryption(self) -> None:
+    def encrypt_bytes(self, data: bytes) -> bytes:
         """
-        Perform the decryption process.
-        1. Decrypt the symmetric key using the private key.
-        2. Decrypt the file using the symmetric key.
-        3. Return the path of the decrypted file.
+        This a wrapper method to encrypt bytes using the symmetric key.
+        It uses the EncryptionService to perform the encryption.
+        Args:
+            data (bytes): The data to be encrypted.
+        Returns:
+            bytes: The encrypted data.
+        Raises:
+            RuntimeError: If the symmetric key is not loaded or if there is an error during encryption
         """
-        try:
-            decryption_service = DecryptionService(self.config)
-            if self.config.get("integrity_check", False):
-                self.metadata_service.verify_integrity()
-            symmetric_key = decryption_service.decrypt_symmetric_key()
-            decrypted_data_path = decryption_service.decrypt_data(symmetric_key)
-            self.logger.info(
-                f"Decryption completed, decrypted file available at: {decrypted_data_path}"
-            )
-        except Exception as e:
-            self.logger.error(f"Decryption failed: {e}")
-            raise e
+        if not self.__symmetric_key:
+            self.logger.error("Symmetric key not loaded. Call load_keys() first.")
+            raise RuntimeError("Symmetric key not loaded. Call load_keys() first.")
+        return self.encryptor.encrypt_bytes(data, self.__symmetric_key)
+
+    def decrypt_bytes(self, encrypted_data: bytes) -> bytes:
+        """
+        This a wrapper method to decrypt bytes using the symmetric key.
+        It uses the DecryptionService to perform the decryption.
+        Args:
+            encrypted_data (bytes): The encrypted data to be decrypted.
+        Returns:
+            bytes: The decrypted data.
+        Raises:
+            RuntimeError: If the symmetric key is not loaded or if there is an error during decryption.
+        """
+        if not self.__symmetric_key:
+            self.logger.error("Symmetric key not loaded. Call load_keys() first.")
+            raise RuntimeError("Symmetric key not loaded. Call load_keys() first.")
+        return self.decryptor.decrypt_bytes(encrypted_data, self.__symmetric_key)
+
+    def get_encrypted_key_and_key_id(self) -> Tuple[bytes, str]:
+        """
+        Expose method returns a tuple containing the encrypted symmetric key
+        and the key ID.
+        Returns:
+            Tuple[bytes, str]: The encrypted symmetric key and key ID.
+        """
+        return self.encrypted_symmetric_key, self.key_id
+
+    def end_session(self):
+        """
+        This method is called to end the session and clear sensitive data
+        from memory. It sets the symmetric key and encrypted symmetric key to None.
+        It is important to clear sensitive data to prevent memory leaks and
+        potential security vulnerabilities.
+        """
+        if self.__symmetric_key:
+            self.__symmetric_key = None
+        self.encrypted_symmetric_key = None
