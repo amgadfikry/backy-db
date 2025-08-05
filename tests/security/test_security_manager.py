@@ -1,227 +1,124 @@
+# tests/test_security_manager.py
 import pytest
-from unittest.mock import Mock
 from security.security_manager import SecurityManager
-from security.encryption_service import EncryptionService
-from security.decryption_service import DecryptionService
-from security.security_metadata import SecurityMetadata
-from logger.logger_manager import LoggerManager
-from pathlib import Path
 
 
 class TestSecurityManager:
     """
-    Tests for the SecurityManager class.
+    Test suite for the SecurityManager class.
+    This suite tests the initialization, key loading, encryption, and decryption functionalities.
     """
 
     @pytest.fixture
-    def security_manager_setup(self, mocker):
+    def security_manager(self, mocker):
         """
-        Setup fixture for SecurityManager tests.
+        Fixture to create a SecurityManager instance with a mock security configuration.
+        Returns:
+            SecurityManager: An instance of SecurityManager.
         """
-        # Mock the LoggerManager to prevent actual log file creation
-        mock_logger = mocker.patch.object(
-            LoggerManager, "setup_logger", autospec=True
-        ).return_value
-        mock_logger.info = Mock()
-        mock_logger.error = Mock()
+        # Mock SecurityEngine.get_keys
+        mock_engine = mocker.patch("security.security_manager.SecurityEngine")
+        mock_engine_instance = mock_engine.return_value
+        mock_engine_instance.get_keys.return_value = (
+            b"symmetric_key",
+            b"encrypted_key",
+            "key_id",
+        )
+        # Mock EncryptionService
+        mock_encryptor_class = mocker.patch(
+            "security.security_manager.EncryptionService"
+        )
+        mock_encryptor_instance = mock_encryptor_class.return_value
+        mock_encryptor_instance.encrypt_bytes.return_value = b"encrypted_data"
+        # Mock DecryptionService
+        mock_decryptor_class = mocker.patch(
+            "security.security_manager.DecryptionService"
+        )
+        mock_decryptor_instance = mock_decryptor_class.return_value
+        mock_decryptor_instance.decrypt_bytes.return_value = b"decrypted_data"
+        # Create SecurityManager instance
+        security_config = {"some_config": "value"}
+        return SecurityManager(security_config)
 
-        # Mock the EncryptionService, DecryptionService, and SecurityMetadata classes
-        mock_encryption_service_init = mocker.patch.object(
-            EncryptionService, "__init__", autospec=True
-        )
-        mock_encryption_service_init.return_value = None
-        mock_encryption_service = Mock(spec=EncryptionService)
-        mock_encryption_service.encrypt_using_symmetric_key.return_value = (
-            b"mock_symmetric_key"
-        )
-        mock_encryption_service.encrypt_symmetric_key_with_public_key.return_value = (
-            None
-        )
-        mocker.patch(
-            "security.security_manager.EncryptionService",
-            return_value=mock_encryption_service,
-        )
-
-        mock_decryption_service_init = mocker.patch.object(
-            DecryptionService, "__init__", autospec=True
-        )
-        mock_decryption_service_init.return_value = None
-        mock_decryption_service = Mock(spec=DecryptionService)
-        mock_decryption_service.decrypt_symmetric_key.return_value = (
-            b"mock_symmetric_key"
-        )
-        mock_decryption_service.decrypt_data.return_value = Mock(spec=Path)
-        mocker.patch(
-            "security.security_manager.DecryptionService",
-            return_value=mock_decryption_service,
-        )
-
-        mock_security_metadata_init = mocker.patch.object(
-            SecurityMetadata, "__init__", autospec=True
-        )
-        mock_security_metadata_init.return_value = None
-        mock_metadata_service = Mock(spec=SecurityMetadata)
-        mock_metadata_service.create_metadata.return_value = Mock(spec=Path)
-        mock_metadata_service.copy_public_key.return_value = Mock(spec=Path)
-        mock_metadata_service.create_integrity_file.return_value = Mock(spec=Path)
-        mock_metadata_service.verify_integrity.return_value = True
-        mocker.patch(
-            "security.security_manager.SecurityMetadata",
-            return_value=mock_metadata_service,
-        )
-
-        # Default configuration for tests
-        security_config = {
-            "private_key_password": "test_password",
-            "private_key_size": "2048",
-            "integrity_password": "test_integrity_password",
-            "integrity_check": True,
-            "file_extension": "zip",
-        }
-
-        # Create an instance of SecurityManager
-        manager = SecurityManager(security_config)
-
-        yield manager, mock_encryption_service, mock_decryption_service, mock_metadata_service, mock_logger
-
-    def test_init_success(self, security_manager_setup):
+    def test_initialization_success(self, security_manager):
         """
-        Test that SecurityManager initializes successfully.
+        Test that the SecurityManager initializes correctly and loads keys.
         """
-        manager, _, _, _, mock_logger = security_manager_setup
-        assert isinstance(manager, SecurityManager)
-        assert manager.logger == mock_logger
-        assert manager.config["integrity_check"] is True
-        assert isinstance(manager.metadata_service, Mock)
+        assert security_manager is not None
+        assert security_manager._SecurityManager__symmetric_key == b"symmetric_key"
+        assert security_manager.encrypted_symmetric_key == b"encrypted_key"
+        assert security_manager.key_id == "key_id"
+        assert security_manager.encryptor is not None
+        assert security_manager.decryptor is not None
 
-    def test_encryption_success_with_integrity_check(self, security_manager_setup):
+    def test_load_keys_success(self, security_manager):
         """
-        Test that the encryption method completes successfully with integrity check enabled.
+        Test that the load_keys method correctly loads keys.
         """
-        manager, mock_encryption_service, _, mock_metadata_service, mock_logger = (
-            security_manager_setup
-        )
+        security_manager.load_keys()
+        assert security_manager._SecurityManager__symmetric_key == b"symmetric_key"
+        assert security_manager.encrypted_symmetric_key == b"encrypted_key"
+        assert security_manager.key_id == "key_id"
 
-        manager.encryption()
-
-        mock_encryption_service.encrypt_using_symmetric_key.assert_called_once()
-        mock_encryption_service.encrypt_symmetric_key_with_public_key.assert_called_once_with(
-            b"mock_symmetric_key"
-        )
-        mock_metadata_service.create_metadata.assert_called_once()
-        mock_metadata_service.copy_public_key.assert_called_once()
-        mock_metadata_service.create_integrity_file.assert_called_once()
-        mock_logger.info.assert_called_once_with("Encryption completed successfully")
-
-    def test_encryption_success_without_integrity_check(self, security_manager_setup):
+    def test_encrypt_bytes_success(self, security_manager):
         """
-        Test that the encryption method completes successfully without integrity check.
+        Test that the encrypt_bytes method correctly encrypts data.
         """
-        manager, mock_encryption_service, _, mock_metadata_service, mock_logger = (
-            security_manager_setup
+        data = b"some_data"
+        encrypted_data = security_manager.encrypt_bytes(data)
+        assert encrypted_data == b"encrypted_data"
+        security_manager.encryptor.encrypt_bytes.assert_called_once_with(
+            data, security_manager._SecurityManager__symmetric_key
         )
-        manager.config["integrity_check"] = False
 
-        manager.encryption()
-
-        mock_encryption_service.encrypt_using_symmetric_key.assert_called_once()
-        mock_encryption_service.encrypt_symmetric_key_with_public_key.assert_called_once_with(
-            b"mock_symmetric_key"
-        )
-        mock_metadata_service.create_metadata.assert_called_once()
-        mock_metadata_service.copy_public_key.assert_called_once()
-        mock_metadata_service.create_integrity_file.assert_not_called()
-        mock_logger.info.assert_called_once_with("Encryption completed successfully")
-
-    def test_encryption_failure(self, security_manager_setup):
+    def test_encrypt_bytes_no_key(self, security_manager, caplog):
         """
-        Test that the encryption method handles exceptions gracefully.
+        Test that encrypt_bytes raises an error if the symmetric key is not loaded.
         """
-        manager, mock_encryption_service, _, _, mock_logger = security_manager_setup
-        mock_encryption_service.encrypt_using_symmetric_key.side_effect = Exception(
-            "Encryption key error"
+        security_manager._SecurityManager__symmetric_key = None
+        with pytest.raises(RuntimeError) as exc_info:
+            security_manager.encrypt_bytes(b"some_data")
+        assert "Symmetric key not loaded. Call load_keys() first." in caplog.text
+        assert "Symmetric key not loaded. Call load_keys() first." in str(
+            exc_info.value
         )
 
-        with pytest.raises(Exception) as excinfo:
-            manager.encryption()
-        assert "Encryption key error" in str(excinfo.value)
-        mock_logger.error.assert_called_once_with(
-            "Encryption failed: Encryption key error"
-        )
-
-    def test_decryption_success_with_integrity_check(self, security_manager_setup):
+    def test_decrypt_bytes_success(self, security_manager):
         """
-        Test that the decryption method completes successfully with integrity check enabled.
+        Test that the decrypt_bytes method correctly decrypts data.
         """
-        manager, _, mock_decryption_service, mock_metadata_service, mock_logger = (
-            security_manager_setup
-        )
-        manager.integrity_check = True
-        mock_decrypted_path = Mock(spec=Path, name="mock_decrypted_path")
-        mock_decryption_service.decrypt_data.return_value = mock_decrypted_path
-
-        manager.decryption()
-
-        mock_metadata_service.verify_integrity.assert_called_once()
-        mock_decryption_service.decrypt_symmetric_key.assert_called_once()
-        mock_decryption_service.decrypt_data.assert_called_once_with(
-            b"mock_symmetric_key"
-        )
-        mock_logger.info.assert_called_once_with(
-            f"Decryption completed, decrypted file available at: {mock_decrypted_path}"
+        encrypted_data = b"encrypted_data"
+        decrypted_data = security_manager.decrypt_bytes(encrypted_data)
+        assert decrypted_data == b"decrypted_data"
+        security_manager.decryptor.decrypt_bytes.assert_called_once_with(
+            encrypted_data, security_manager._SecurityManager__symmetric_key
         )
 
-    def test_decryption_success_without_integrity_check(self, security_manager_setup):
+    def test_decrypt_bytes_no_key(self, security_manager, caplog):
         """
-        Test that the decryption method completes successfully without integrity check.
+        Test that decrypt_bytes raises an error if the symmetric key is not loaded.
         """
-        manager, _, mock_decryption_service, mock_metadata_service, mock_logger = (
-            security_manager_setup
-        )
-        manager.config["integrity_check"] = False
-        mock_decrypted_path = Mock(spec=Path, name="mock_decrypted_path")
-        mock_decryption_service.decrypt_data.return_value = mock_decrypted_path
-
-        manager.decryption()
-
-        mock_metadata_service.verify_integrity.assert_not_called()
-        mock_decryption_service.decrypt_symmetric_key.assert_called_once()
-        mock_decryption_service.decrypt_data.assert_called_once_with(
-            b"mock_symmetric_key"
-        )
-        mock_logger.info.assert_called_once_with(
-            f"Decryption completed, decrypted file available at: {mock_decrypted_path}"
+        security_manager._SecurityManager__symmetric_key = None
+        with pytest.raises(RuntimeError) as exc_info:
+            security_manager.decrypt_bytes(b"encrypted_data")
+        assert "Symmetric key not loaded. Call load_keys() first." in caplog.text
+        assert "Symmetric key not loaded. Call load_keys() first." in str(
+            exc_info.value
         )
 
-    def test_decryption_integrity_check_failure(self, security_manager_setup):
+    def test_get_encrypted_key_and_key_id(self, security_manager):
         """
-        Test that decryption method handles integrity check failure.
+        Test that get_encrypted_key_and_key_id returns the correct encrypted key and key ID.
         """
-        manager, _, _, mock_metadata_service, mock_logger = security_manager_setup
-        manager.integrity_check = True
-        mock_metadata_service.verify_integrity.side_effect = ValueError(
-            "Integrity check failed"
-        )
+        encrypted_key, key_id = security_manager.get_encrypted_key_and_key_id()
+        assert encrypted_key == b"encrypted_key"
+        assert key_id == "key_id"
 
-        with pytest.raises(ValueError) as excinfo:
-            manager.decryption()
-        assert "Integrity check failed" in str(excinfo.value)
-        mock_logger.error.assert_called_once_with(
-            "Decryption failed: Integrity check failed"
-        )
-
-    def test_decryption_failure(self, security_manager_setup):
+    def test_end_session(self, security_manager):
         """
-        Test that the decryption method handles general exceptions gracefully.
+        Test that end_session does not raise any errors.
+        This method is currently a placeholder and does not perform any actions.
         """
-        manager, _, mock_decryption_service, _, mock_logger = security_manager_setup
-        mock_decryption_service.decrypt_symmetric_key.side_effect = Exception(
-            "Decryption key error"
-        )
-
-        with pytest.raises(Exception) as excinfo:
-            manager.decryption()
-        assert "Decryption key error" in str(excinfo.value)
-        mock_logger.error.assert_called_once_with(
-            "Decryption failed: Decryption key error"
-        )
+        security_manager.end_session()
+        assert security_manager._SecurityManager__symmetric_key is None
+        assert security_manager.encrypted_symmetric_key is None
