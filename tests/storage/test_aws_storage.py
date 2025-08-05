@@ -5,6 +5,7 @@ from botocore.exceptions import NoCredentialsError, ClientError
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+import boto3
 
 load_dotenv()
 
@@ -208,13 +209,22 @@ class TestAWSStorage:
         assert "Failed to delete file from S3." in str(excinfo.value)
 
     @pytest.fixture
-    def live_aws_storage(self, tmp_path):
+    def live_aws_storage(self, tmp_path, monkeypatch):
         """
         Fixture to create a live AWSStorage instance with real credentials.
         This requires valid AWS credentials to run.
         """
-        # Get the bucket name from environment variables or use a default
-        bucket_name = os.getenv("AWS_S3_BUCKET_NAME", "test-bucket")
+        # Set environment variables for AWS credentials
+        monkeypatch.setenv("AWS_S3_BUCKET_NAME", "backy-backups")
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
+        monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+        # Create a mock S3 client
+        s3_client = boto3.client("s3", endpoint_url="http://localhost:4566")
+        # Create a bucket for testing
+        s3_client.create_bucket(Bucket="backy-backups")
+        # Patch the boto3 client to use the mock S3 client
+        monkeypatch.setattr("boto3.client", lambda *args, **kwargs: s3_client)
         # Create a temporary file to upload
         test_file = tmp_path / "test_file.txt"
         test_file.write_text("This is a test file.")
@@ -224,10 +234,10 @@ class TestAWSStorage:
         yield aws_storage, test_file
         # Cleanup: delete the test file from S3 after the test
         aws_storage.s3.delete_object(
-            Bucket=bucket_name, Key="backy_backups/test_db/test_file.txt"
+            Bucket=aws_storage.bucket_name, Key="backy_backups/test_db/test_file.txt"
         )
 
-    @pytest.mark.usefixtures("require_aws_credentials")
+    @pytest.mark.usefixtures("require_localstack")
     def test_validate_credentials_real(self, live_aws_storage):
         """
         Test validating AWS credentials with a live AWSStorage instance.
@@ -236,7 +246,7 @@ class TestAWSStorage:
         aws_storage, _ = live_aws_storage
         assert aws_storage.validate_credentials() is True
 
-    @pytest.mark.usefixtures("require_aws_credentials")
+    @pytest.mark.usefixtures("require_localstack")
     def test_upload_real_file(self, live_aws_storage):
         """
         Test uploading a real file to AWS S3.
@@ -246,7 +256,7 @@ class TestAWSStorage:
         result = aws_storage.upload(str(test_file))
         assert result == f"backy_backups/{aws_storage.db_name}/{test_file.name}"
 
-    @pytest.mark.usefixtures("require_aws_credentials")
+    @pytest.mark.usefixtures("require_localstack")
     def test_download_real_file(self, live_aws_storage):
         """
         Test downloading a real file from AWS S3.
@@ -268,7 +278,7 @@ class TestAWSStorage:
         assert Path(result).read_text() == "This is a test file."
         assert result == str(Path(os.getenv("MAIN_BACKUP_PATH")) / "test_file.txt")
 
-    @pytest.mark.usefixtures("require_aws_credentials")
+    @pytest.mark.usefixtures("require_localstack")
     def test_delete_real_file(self, live_aws_storage):
         """
         Test deleting a real file from AWS S3.
