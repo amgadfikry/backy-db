@@ -1,8 +1,6 @@
 # tests/logger/test_logger_manager.py
 import logging
-import tempfile
-import shutil
-import pytest
+import os
 from pathlib import Path
 from logger.logger_manager import LoggerManager
 
@@ -11,16 +9,6 @@ class TestLoggerManager:
     """
     Test suite for LoggerManager class.
     """
-
-    @pytest.fixture(autouse=True)
-    def temp_log_dir(self, monkeypatch):
-        """
-        Fixture to create a temporary log directory for testing.
-        """
-        temp_dir = tempfile.mkdtemp()
-        monkeypatch.setenv("LOGGING_PATH", temp_dir)
-        yield Path(temp_dir)
-        shutil.rmtree(temp_dir)
 
     def test_logger_creation_with_file_and_console_handler(self):
         """
@@ -44,13 +32,13 @@ class TestLoggerManager:
         assert logger1 is logger2
         assert handlers_before == handlers_after
 
-    def test_logger_logs_to_file(self, temp_log_dir):
+    def test_logger_logs_to_file(self):
         """
         Test that a logger logs messages to a file.
         """
         logger = LoggerManager.setup_logger(name="file_test", log_file="mylogfile")
         logger.info("Test log message")
-        log_file_path = temp_log_dir / "mylogfile.log"
+        log_file_path = Path(os.getenv("LOGGING_PATH")) / "mylogfile.log"
         assert log_file_path.exists()
         content = log_file_path.read_text()
         assert "Test log message" in content
