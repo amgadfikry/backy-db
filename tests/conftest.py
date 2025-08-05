@@ -20,6 +20,29 @@ def is_mysql_running():
     except (socket.timeout, ConnectionRefusedError, OSError):
         return False
 
+
+def is_localstack_running():
+    """
+    Check if LocalStack is running by attempting to connect to the default port.
+    Returns:
+        bool: True if LocalStack is running, False otherwise.
+    """
+    try:
+        with socket.create_connection(("localhost", 4566), timeout=3):
+            return True
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return False
+
+
+@pytest.fixture
+def require_localstack():
+    """
+    Fixture to skip tests if LocalStack is not running.
+    """
+    if not is_localstack_running():
+        pytest.skip("⚠️ Skipping test: LocalStack is not running.")
+
+
 @pytest.fixture
 def require_mysql():
     """
@@ -29,17 +52,6 @@ def require_mysql():
     if not is_mysql_running():
         pytest.skip("⚠️ Skipping test: MySQL is not running.")
 
-@pytest.fixture
-def require_aws_credentials():
-    """
-    Fixture to skip tests if AWS credentials are not set.
-    This fixture checks for the presence of AWS environment variables
-    and skips the test if they are not set.
-    """
-    aws_key = os.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
-    if not aws_key or not aws_secret:
-        pytest.skip("⚠️ Skipping test: Missing AWS credentials.")
 
 @pytest.fixture
 def require_gcp_credentials():
@@ -51,6 +63,7 @@ def require_gcp_credentials():
     gcp_cred_var = "GOOGLE_APPLICATION_CREDENTIALS"
     if not os.getenv(gcp_cred_var) or not Path(os.getenv(gcp_cred_var)).exists():
         pytest.skip("⚠️ Skipping test: Missing or invalid GCP credentials file.")
+
 
 @pytest.fixture(autouse=True)
 def configure_logging_path(tmp_path, monkeypatch):
