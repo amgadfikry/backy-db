@@ -28,7 +28,7 @@ class CompressionBase(ABC):
             self.logger.error(f"Unsupported compression type: {self.compression_type}")
             raise ValueError(f"Unsupported compression type: {self.compression_type}")
         self.extension = self.SUPPORTED_TYPES[self.compression_type]
-    
+
     @abstractmethod
     def compress_folder(self, folder_path: Path) -> Path:
         """
