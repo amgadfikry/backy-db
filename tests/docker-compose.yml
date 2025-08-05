@@ -39,6 +39,29 @@ services:
       timeout: 5s
       retries: 10
 
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,kms
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: [
+          "CMD-SHELL",
+          "curl -s http://localhost:4566/_localstack/health | grep -q '\"s3\": *\"available\"' &&\
+          curl -s http://localhost:4566/_localstack/health | grep -q '\"kms\": *\"available\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
 volumes:
   mysql_data-8:
   mysql_data-5:
+  localstack_data:
