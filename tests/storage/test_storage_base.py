@@ -2,7 +2,6 @@
 import pytest
 from storage.storage_base import StorageBase
 from pathlib import Path
-import shutil
 
 
 class MockStorage(StorageBase):
@@ -10,17 +9,29 @@ class MockStorage(StorageBase):
     Mock implementation of StorageBase for testing purposes.
     """
 
-    def upload(self) -> Path:
+    def upload(self, file_path: Path) -> Path:
         """
         Mock upload method.
         """
-        return super().upload()
+        return super().upload(file_path)
 
-    def download(self) -> Path:
+    def download(self, file_path: Path) -> Path:
         """
         Mock download method.
         """
-        return super().download()
+        return super().download(file_path)
+
+    def validate_credentials(self) -> bool:
+        """
+        Mock validate credentials method.
+        """
+        return super().validate_credentials()
+
+    def delete(self, file_path):
+        """
+        Mock delete method.
+        """
+        return super().delete(file_path)
 
 
 class TestStorageBase:
@@ -29,74 +40,97 @@ class TestStorageBase:
     """
 
     @pytest.fixture
-    def mock_storage(self, tmp_path, monkeypatch):
+    def mock_storage(self):
         """
         Create a mock storage instance for testing.
         """
-        storage_path = tmp_path / "mock" / "path"
-        storage_path.mkdir(parents=True, exist_ok=True)
-        processed_path = tmp_path / "processed"
-        processed_path.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("MAIN_BACKUP_PATH", str(processed_path))
-        storage = MockStorage(
-            config={"storage_type": "local", "path": str(storage_path)}
-        )
-        yield storage
-        shutil.rmtree(storage_path, ignore_errors=True)
-        shutil.rmtree(processed_path, ignore_errors=True)
+        return MockStorage()
 
     def test_valid_initialization(self, mock_storage):
         """
         Test that the StorageBase initializes correctly with a valid config.
         """
-        assert mock_storage.storage_type == "local"
-        assert mock_storage.path.name == "path"
-        assert mock_storage.processed_path.exists()
         assert mock_storage.logger is not None
-
-    def test_invalid_storage_path(self, caplog):
-        """
-        Test that StorageBase raises ValueError when the storage path does not exist.
-        """
-        with caplog.at_level("ERROR"):
-            with pytest.raises(ValueError) as excinfo:
-                MockStorage(config={"storage_type": "local", "path": "/invalid/path"})
-            assert "Storage path is not set or does not exist." in str(excinfo.value)
-            assert "Storage path is not set or does not exist." in caplog.text
-
-    def test_invalid_main_backup_path(self, tmp_path, caplog, monkeypatch):
-        """
-        Test that StorageBase raises ValueError when MAIN_BACKUP_PATH is not set.
-        """
-        storage_path = tmp_path / "mock" / "path"
-        storage_path.mkdir(parents=True, exist_ok=True)
-        monkeypatch.setenv("MAIN_BACKUP_PATH", None)
-        with caplog.at_level("ERROR"):
-            with pytest.raises(ValueError) as excinfo:
-                MockStorage(config={"storage_type": "local", "path": str(storage_path)})
-            assert "MAIN_BACKUP_PATH environment variable is not set." in str(
-                excinfo.value
-            )
-            assert "MAIN_BACKUP_PATH environment variable is not set." in caplog.text
+        assert mock_storage.db_name == "backy_db"
 
     def test_upload_method(self, mock_storage, caplog):
         """
         Test that the upload method returns the expected path.
         """
-        with caplog.at_level("ERROR"):
-            with pytest.raises(NotImplementedError) as excinfo:
-                mock_storage.upload()
-            assert "Upload method not implemented in MockStorage" in str(excinfo.value)
-            assert "Upload method not implemented in MockStorage" in caplog.text
+        with pytest.raises(NotImplementedError) as excinfo:
+            mock_storage.upload(Path("/fake/file"))
+        assert "Upload method not implemented in MockStorage" in str(excinfo.value)
+        assert "Upload method not implemented in MockStorage" in caplog.text
 
     def test_download_method(self, mock_storage, caplog):
         """
         Test that the download method returns the expected path.
         """
-        with caplog.at_level("ERROR"):
-            with pytest.raises(NotImplementedError) as excinfo:
-                mock_storage.download()
-            assert "Download method not implemented in MockStorage" in str(
-                excinfo.value
-            )
-            assert "Download method not implemented in MockStorage" in caplog.text
+        with pytest.raises(NotImplementedError) as excinfo:
+            mock_storage.download(Path("/fake/file"))
+        assert "Download method not implemented in MockStorage" in str(excinfo.value)
+        assert "Download method not implemented in MockStorage" in caplog.text
+
+    def test_validate_credentials_method(self, mock_storage, caplog):
+        """
+        Test that the validate_credentials method returns True.
+        """
+        with pytest.raises(NotImplementedError) as excinfo:
+            mock_storage.validate_credentials()
+        assert "Validate credentials method not implemented in MockStorage" in str(
+            excinfo.value
+        )
+        assert (
+            "Validate credentials method not implemented in MockStorage" in caplog.text
+        )
+
+    def test_delete_method(self, mock_storage, caplog):
+        """Test that the delete method returns the expected path."""
+        with pytest.raises(NotImplementedError) as excinfo:
+            mock_storage.delete(Path("/fake/file"))
+        assert "Delete method not implemented in MockStorage" in str(excinfo.value)
+        assert "Delete method not implemented in MockStorage" in caplog.text
+
+    def test_generate_dest_path(self, mock_storage):
+        """
+        Test that the generate_dest_path method returns a valid path.
+        """
+        file_path = Path("/fake/file")
+        dest_path = mock_storage.generate_dest_path(file_path)
+        assert dest_path == f"backy_backups/{mock_storage.db_name}/{file_path.name}"
+
+    def test_generate_dest_path_with_spaces_in_db_name(self, mock_storage):
+        """
+        Test that the generate_dest_path method handles spaces in db_name correctly.
+        """
+        mock_storage.db_name = "My Database"
+        file_path = Path("/fake/file")
+        dest_path = mock_storage.generate_dest_path(file_path)
+        assert dest_path == "backy_backups/my_database/file"
+
+    def test_generate_dest_path_with_spaces_in_filename(self, mock_storage):
+        """
+        Test that the generate_dest_path method handles spaces in filename correctly.
+        """
+        mock_storage.db_name = "MyDatabase"
+        file_path = Path("/fake/my file.txt")
+        dest_path = mock_storage.generate_dest_path(file_path)
+        assert dest_path == "backy_backups/mydatabase/my_file.txt"
+
+    def test_generate_dest_path_with_uppercase_db_name(self, mock_storage):
+        """
+        Test that the generate_dest_path method handles uppercase db_name correctly.
+        """
+        mock_storage.db_name = "MyDatabase"
+        file_path = Path("/fake/file.txt")
+        dest_path = mock_storage.generate_dest_path(file_path)
+        assert dest_path == "backy_backups/mydatabase/file.txt"
+
+    def test_generate_dest_path_with_uppercase_filename(self, mock_storage):
+        """
+        Test that the generate_dest_path method handles uppercase filename correctly.
+        """
+        mock_storage.db_name = "MyDatabase"
+        file_path = Path("/fake/MyFile.TXT")
+        dest_path = mock_storage.generate_dest_path(file_path)
+        assert dest_path == "backy_backups/mydatabase/myfile.txt"
