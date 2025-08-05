@@ -10,29 +10,39 @@ load_dotenv()
 
 class CompressionBase(ABC):
     """
-    A class to manage compression and decompression of files.
-    This class provides methods to compress a folder into a zip file and decompress a zip file.
+    A base class for compression operations.
+    This class defines the interface for compression and decompression methods.
+    It should be inherited by specific compression implementations like ZipCompression.
     """
 
     # Supported compression types and their associated extensions
-    SUPPORTED_TYPES = {"zip": "zip", "tar": "tar", "targz": "tar.gz"}
+    SUPPORTED_TYPES = {"zip": ".zip", "tar": ".tar"}
 
     def __init__(self, compression_type: str = "zip"):
         """
         Initialize the CompressionManager with a specified compression type.
         Args:
-            compression_type (str): Type of compression to use ('zip' or 'tar').
+            compression_type (str): Type of compression to use eg. 'zip' or 'tar'.
+        Raises:
+            ValueError: If the compression type is not supported.
         """
         self.logger = LoggerManager.setup_logger("compression")
         self.compression_type = compression_type.lower()
+        if self.compression_type not in self.SUPPORTED_TYPES:
+            self.logger.error(f"Unsupported compression type: {self.compression_type}")
+            raise ValueError(f"Unsupported compression type: {self.compression_type}")
         self.extension = self.SUPPORTED_TYPES[self.compression_type]
         self.processing_path = Path(os.getenv("MAIN_BACKUP_PATH"))
 
     @abstractmethod
-    def compress_folder(self) -> Path:
+    def compress_folder(self, folder_path: Path) -> Path:
         """
         Compress the given folder into a .zip archive preserving the folder structure.
         Then remove the original folder.
+        Args:
+            folder_path (Path): Path to the folder to compress.
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
         Returns:
             Path: Path to the created archive file.
         """
@@ -42,11 +52,13 @@ class CompressionBase(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def decompress_folder(self) -> Path:
+    def decompress_folder(self, folder_path: Path) -> Path:
         """
-        Decompress a .zip file to a folder preserving the original structure.
-        it will extract to the same directory as the zip file
-        Then remove the original zip file.
+        Decompress the given .zip archive into a folder.
+        Args:
+            file_path (Path): Path to the compressed file.
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
         Returns:
             Path: Path to the extracted folder.
         """
@@ -55,28 +67,34 @@ class CompressionBase(ABC):
         )
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def get_folder_from_processing_path(self) -> Path:
+    @abstractmethod
+    def compress_bytes(self, data: bytes) -> bytes:
         """
-        Get the folder from the processing path.
+        Compress the given bytes.
+        Args:
+            data (bytes): Data to compress.
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
         Returns:
-            Path: Path to the folder to compress.
+            bytes: Compressed data.
         """
-        folder_path = list(self.processing_path.glob("*"))
-        if not folder_path:
-            self.logger.error("No folder found in the processing path to compress.")
-            raise ValueError("No folder found in the processing path.")
-        return folder_path[0]
+        self.logger.error(
+            f"compress_bytes method not implemented in subclass {self.__class__.__name__}"
+        )
+        raise NotImplementedError("Subclasses must implement this method.")
 
-    def get_compressed_file_from_processing_path(self) -> Path:
+    @abstractmethod
+    def decompress_bytes(self, data: bytes) -> bytes:
         """
-        Get the compressed file from the processing path.
+        Decompress the given bytes.
+        Args:
+            data (bytes): Data to decompress.
+        Raises:
+            NotImplementedError: If the method is not implemented in the subclass.
         Returns:
-            Path: Path to the compressed file.
+            bytes: Decompressed data.
         """
-        compressed_file = list(self.processing_path.glob(f"*.{self.extension}"))
-        if not compressed_file:
-            self.logger.error(
-                f"No compressed file found in the processing path for type {self.extension}."
-            )
-            raise ValueError("No compressed file found in the processing path.")
-        return compressed_file[0]
+        self.logger.error(
+            f"decompress_bytes method not implemented in subclass {self.__class__.__name__}"
+        )
+        raise NotImplementedError("Subclasses must implement this method.")
