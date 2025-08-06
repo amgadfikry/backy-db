@@ -24,12 +24,11 @@ class TestDeleteFolder:
         Test that a non-existing folder does not raise an error but logs a warning.
         """
         non_existing = tmp_path / "nope"
-        with caplog.at_level("WARNING"):
-            delete_folder(non_existing)
-            assert (
-                f"Folder {non_existing} does not exist or is not a directory."
-                in caplog.text
-            )
+        delete_folder(non_existing)
+        assert (
+            f"Folder {non_existing} does not exist or is not a directory."
+            in caplog.text
+        )
 
     def test_delete_file_instead_of_folder(self, tmp_path, caplog):
         """
@@ -38,12 +37,10 @@ class TestDeleteFolder:
         file_path = tmp_path / "some_file.txt"
         file_path.touch()
         assert file_path.exists()
-        with caplog.at_level("WARNING"):
-            delete_folder(file_path)
-            assert (
-                f"Folder {file_path} does not exist or is not a directory."
-                in caplog.text
-            )
+        delete_folder(file_path)
+        assert (
+            f"Folder {file_path} does not exist or is not a directory." in caplog.text
+        )
         assert file_path.exists()
 
     def test_permission_error_raises(self, tmp_path, mocker):
