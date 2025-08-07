@@ -1,19 +1,19 @@
 # databases/database_manager.py
-from pathlib import Path
-from databases.mysql_database import MySQLDatabase
+from databases.mysql.mysql_manager import MySQLManager
 from logger.logger_manager import LoggerManager
-from databases.database_metadata import DatabaseMetadata
-from datetime import datetime
+from typing import Iterator, Tuple
 
 
 class DatabaseManager:
     """
     Manages the database operations for the Backy project.
-    This class is responsible for initializing and managing the database backup and restore processes.
+    This class is responsible for providing a unified interface for database operations,
+    including backup and restore functionalities.
+    It supports multiple database types, allowing for extensibility in the future.
     """
 
     DATABASES = {
-        "mysql": MySQLDatabase,
+        "mysql": MySQLManager,
     }
 
     def __init__(self, database_config: dict):
@@ -21,6 +21,8 @@ class DatabaseManager:
         Initialize the DatabaseManager with a specific database configuration.
         args:
             database_config (dict): Configuration dictionary for the database.
+        Raises:
+            ValueError: If the database type is not supported.
         """
         self.logger = LoggerManager.setup_logger("database")
         database_type = database_config.get("db_type").lower()
@@ -28,56 +30,75 @@ class DatabaseManager:
             self.logger.error(f"Unsupported database type: {database_type}")
             raise ValueError(f"Unsupported database type: {database_type}")
         self.db = self.DATABASES[database_type](database_config)
-        self.metadata = DatabaseMetadata(database_config)
+        self.feature = None
 
-    def backup(self) -> Path:
+    def __enter__(self):
         """
-        orchestrates the backup process for the database.
-        using database-specific backup methods and metadata creation.
+        This method is called when the object is used in a 'with' statement.
+        It establishes a connection to the database.
         Returns:
-            Path: The path to the created backup folder.
+            self: The instance of the DatabaseManager.
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.db.connect()
+        self.db.connection.start_transaction()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """
+        This method is called when the 'with' statement is exited.
+        It closes the database connection.
+        """
+        self.db.connection.commit()
+        self.db.close()
+
+    def connect(self):
+        """
+        Connect to the database.
+        This method is called to establish a connection to the database.
+        """
+        self.db.connect()
+        self.db.connection.start_transaction()
+
+    def close(self):
+        """
+        Close the database connection.
+        This method is called to close the connection to the database.
+        """
+        self.db.connection.commit()
+        self.db.close()
+
+    def backup(self) -> Iterator[Tuple[str, str]]:
+        """
+        This method connects to the database, retrieves the backup statements,
+        and yields them one by one.
+        It is designed to be used in a streaming context, allowing for efficient memory usage.
+        Returns:
+            Iterator[Tuple[str, str]]: An iterator yielding tuples of feature names and their corresponding  statements.
+        """
         try:
-            # Start the backup process by creating a backup folder
-            self.logger.info("Starting database backup process.")
-            backup_folder = self.metadata.create_backup_folder(timestamp)
-            self.logger.info(f"Backup folder created at: {backup_folder}")
-
-            # Connect to the database and perform the backup
-            self.db.connect()
-            self.logger.info("Database connection established.")
-
-            # Perform the backup to database
-            backup_files = self.db.backup(timestamp)
-            if not backup_files:
-                self.logger.error(
-                    "No backup files were created during the backup process."
-                )
-                raise FileNotFoundError("No backup files were created.")
-            self.logger.info(f"Backup files created: {backup_files}")
-
-            # Create metadata and checksum files
-            metadata_file = self.metadata.create_metadata_file(timestamp)
-            self.logger.info(f"Metadata file created at: {metadata_file}")
-            checksum_file = self.metadata.create_checksum_file(backup_files)
-            self.logger.info(f"Checksum file created at: {checksum_file}")
-
-            # Close the database connection
-            self.db.close()
-            self.logger.info("Database connection closed.")
-
-            # Return the path to the backup folder
-            self.logger.info("Database backup process completed successfully.")
-            return backup_folder
+            # yield the backup statements from the database
+            for feature, statement in self.db.backup():
+                yield feature, statement
         except Exception as e:
-            if isinstance(e, FileNotFoundError):
-                raise e
             self.logger.error(f"Error during backup process: {e}")
-            raise RuntimeError(f"Failed to perform backup: {e}")
+            raise RuntimeError(f"Error during backup process: {e}")
 
-    def restore(self, backup_file: Path):
-        self.logger.error("Restore method is not implemented for this database type.")
-        raise NotImplementedError(
-            "Restore method is not implemented for this database type."
-        )
+    def restore(self, feature_data: Tuple[str, str]):
+        """
+        This method restores the database from a backup file or statement.
+        It connects to the database, checks the active features, and restores
+        the database based on the restore mode and conflict handling.
+        Args:
+            feature_data (Tuple[str, str]): A tuple containing the feature name and the corresponding SQL statement or file path.
+        """
+        try:
+            feature, data = feature_data
+            if self.feature is None or self.feature != feature:
+                self.db.connection.commit()
+                self.feature = feature
+            # Restore the database using the provided feature data
+            self.db.restore(feature_data)
+        except Exception as e:
+            self.db.connection.rollback()
+            self.logger.error(f"Error during restore process: {e}")
+            raise RuntimeError(f"Error during restore process: {e}")
