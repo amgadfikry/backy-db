@@ -61,7 +61,11 @@ class TestHMACIntegrity:
         """
         files = self.checksum_integrity.get_files_from_processing_path()
         files.append(self.checksum_integrity.processing_path / "integrity.hmac")
-        mocker.patch.object(self.checksum_integrity, "get_files_from_processing_path", return_value=files)
+        mocker.patch.object(
+            self.checksum_integrity,
+            "get_files_from_processing_path",
+            return_value=files,
+        )
         mocker.patch.object(
             self.checksum_integrity, "compute_hmac", return_value="dummychecksum"
         )

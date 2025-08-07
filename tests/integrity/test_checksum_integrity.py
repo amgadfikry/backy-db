@@ -53,7 +53,11 @@ class TestChecksumIntegrity:
         """
         files = self.checksum_integrity.get_files_from_processing_path()
         files.append(self.checksum_integrity.processing_path / "integrity.sha256")
-        mocker.patch.object(self.checksum_integrity, "get_files_from_processing_path", return_value=files)
+        mocker.patch.object(
+            self.checksum_integrity,
+            "get_files_from_processing_path",
+            return_value=files,
+        )
         mocker.patch.object(
             self.checksum_integrity, "generate_sha256", return_value="dummychecksum"
         )
@@ -63,7 +67,6 @@ class TestChecksumIntegrity:
             content = f.read()
         assert "dummychecksum  test_file.txt" in content
         assert "dummychecksum  test_file2.txt" in content
-
 
     def test_create_integrity_failure(self, mocker):
         """
@@ -113,7 +116,9 @@ class TestChecksumIntegrity:
             "dummychecksum  test_file.txt\nwrongchecksum  test_file2.txt\n"
         )
         mocker.patch.object(
-            self.checksum_integrity, "generate_sha256", side_effect=RuntimeError("Checksum mismatch")
+            self.checksum_integrity,
+            "generate_sha256",
+            side_effect=RuntimeError("Checksum mismatch"),
         )
         with pytest.raises(RuntimeError) as exc_info:
             self.checksum_integrity.verify_integrity(integrity_file)
