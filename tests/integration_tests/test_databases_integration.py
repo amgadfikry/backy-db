@@ -7,7 +7,7 @@ import pytest
 class TestDatabasesIntegration:
     """ """
 
-    @pytest.fixture(autouse=True)
+    @pytest.fixture
     def setup_database(self, request, mysql_port, monkeypatch):
         """
         Setup the database for testing.
