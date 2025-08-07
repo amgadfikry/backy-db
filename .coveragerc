@@ -1,0 +1,8 @@
+# .coveragerc
+[run]
+omit =
+    venv/*
+    tests/*
+    */__init__.py
+    main.py
+    setup.py
