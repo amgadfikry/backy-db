@@ -84,3 +84,8 @@ def configure_logging_path(tmp_path, monkeypatch):
     process_path.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("MAIN_BACKUP_PATH", str(process_path))
     yield
+
+
+@pytest.fixture(params=["3306", "3307"], ids=["MySQL 8.0", "MySQL 5.7"])
+def mysql_port(request):
+    return request.param
