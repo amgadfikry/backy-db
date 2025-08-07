@@ -1,27 +1,28 @@
 # tests/databases/test_database_base.py
-import shutil
 import pytest
-import tempfile
-from pathlib import Path
 from databases.database_base import DatabaseBase
+from typing import Iterator, Tuple
 
 
 class MockDatabaseBase(DatabaseBase):
     """
     Mock implementation of the DatabaseBase class for testing purposes.
-    This class implements the abstract methods with simple pass statements.
     """
 
     def connect(self):
+        """Connect to the database using the provided configuration."""
         return super().connect()
 
-    def backup(self, timestamp: str) -> Path:
-        return super().backup(timestamp)
+    def backup(self) -> Iterator[Tuple[str, str]]:
+        """Perform a backup of the database."""
+        return super().backup()
 
-    def restore(self, backup_file: Path):
-        return super().restore(backup_file)
+    def restore(self, feature_data: Tuple[str, str]) -> None:
+        """Restore the database from a backup file or files."""
+        return super().restore(feature_data)
 
-    def close(self):
+    def close(self) -> None:
+        """Close the database connection."""
         return super().close()
 
 
@@ -31,14 +32,10 @@ class TestDatabaseBase:
     """
 
     @pytest.fixture
-    def setup(self, monkeypatch):
+    def setup(self):
         """
         Fixture to provide a mock configuration for the database.
         """
-        temp_dir = tempfile.mkdtemp()
-        monkeypatch.setenv("LOGGING_PATH", temp_dir)
-        monkeypatch.setenv("MAIN_BACKUP_PATH", (Path(temp_dir) / "backups"))
-
         config = {
             "db_name": "test_db",
             "user": "test_user",
@@ -46,10 +43,8 @@ class TestDatabaseBase:
             "host": "localhost",
             "port": 5432,
         }
-        mock_database = MockDatabaseBase(config=config)
-        yield mock_database
-        # Cleanup after the test
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        mock_database = MockDatabaseBase(config)
+        return mock_database
 
     @pytest.mark.parametrize("method_name", ["connect", "backup", "restore", "close"])
     def test_abstracted_methods(self, setup, method_name):
@@ -59,10 +54,8 @@ class TestDatabaseBase:
         mock_database = setup
         with pytest.raises(NotImplementedError) as exc_info:
             method = getattr(mock_database, method_name)
-            if method_name == "backup":
-                method("dummy_timestamp")
-            elif method_name == "restore":
-                method(Path("dummy_backup.sql"))
+            if method_name == "restore":
+                method(("dummy_feature", "dummy_statement"))
             else:
                 method()
         assert str(exc_info.value) == "Subclasses must implement this method."
