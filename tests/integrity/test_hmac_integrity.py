@@ -55,6 +55,27 @@ class TestHMACIntegrity:
         assert "dummychecksum  test_file.txt" in content
         assert "dummychecksum  test_file2.txt" in content
 
+    def test_create_integrity_success_passing_itself(self, mocker):
+        """
+        Test the create_integrity method for successful hmac file creation
+        """
+        files = self.checksum_integrity.get_files_from_processing_path()
+        files.append(self.checksum_integrity.processing_path / "integrity.hmac")
+        mocker.patch.object(self.checksum_integrity, "get_files_from_processing_path", return_value=files)
+        mocker.patch.object(
+            self.checksum_integrity, "compute_hmac", return_value="dummychecksum"
+        )
+        mocker.patch.object(
+            self.checksum_integrity, "derive_key", return_value=b"dummykey"
+        )
+        checksum_file = self.checksum_integrity.create_integrity()
+        assert checksum_file.exists()
+        with open(checksum_file, "r") as f:
+            content = f.read()
+        assert "salt: " in content
+        assert "dummychecksum  test_file.txt" in content
+        assert "dummychecksum  test_file2.txt" in content
+
     def test_create_integrity_failure(self, mocker):
         """
         Test the create_integrity method for failure when no files are present
@@ -85,6 +106,36 @@ class TestHMACIntegrity:
         )
         result = self.checksum_integrity.verify_integrity(integrity_file)
         assert result is True
+
+    def test_verify_integrity_passing_itself(self, mocker, tmp_path):
+        """
+        Test the verify_integrity method for successful integrity verification
+        when integrity file is passed itself
+        """
+        integrity_file = tmp_path / "integrity.hmac"
+        integrity_file.write_text(
+            f"salt: {secrets.token_bytes(16).hex()}\n"
+            f"dummychecksum  integrity.hmac\n"
+            f"dummychecksum  test_file.txt\n"
+            f"dummychecksum  test_file2.txt\n"
+        )
+        mocker.patch.object(
+            self.checksum_integrity, "derive_key", return_value=b"dummykey"
+        )
+        mocker.patch.object(
+            self.checksum_integrity, "compute_hmac", return_value="dummychecksum"
+        )
+        result = self.checksum_integrity.verify_integrity(integrity_file)
+        assert result is True
+
+    def test_verify_integrity_not_saltt_found(self, mocker, tmp_path):
+        """
+        Test the verify_integrity method for failure when salt is not found in integrity file
+        """
+        integrity_file = tmp_path / "integrity.hmac"
+        integrity_file.write_text("dummychecksum  test_file.txt\n")
+        result = self.checksum_integrity.verify_integrity(integrity_file)
+        assert result is False
 
     def test_verify_integrity_failure(self, mocker, tmp_path):
         """

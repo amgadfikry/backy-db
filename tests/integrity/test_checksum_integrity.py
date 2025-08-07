@@ -47,6 +47,24 @@ class TestChecksumIntegrity:
         assert "dummychecksum  test_file.txt" in content
         assert "dummychecksum  test_file2.txt" in content
 
+    def test_create_integrity_success_make_sure_pass_itself(self, mocker):
+        """
+        Test the create_integrity method for successful checksum file creation
+        """
+        files = self.checksum_integrity.get_files_from_processing_path()
+        files.append(self.checksum_integrity.processing_path / "integrity.sha256")
+        mocker.patch.object(self.checksum_integrity, "get_files_from_processing_path", return_value=files)
+        mocker.patch.object(
+            self.checksum_integrity, "generate_sha256", return_value="dummychecksum"
+        )
+        checksum_file = self.checksum_integrity.create_integrity()
+        assert checksum_file.exists()
+        with open(checksum_file, "r") as f:
+            content = f.read()
+        assert "dummychecksum  test_file.txt" in content
+        assert "dummychecksum  test_file2.txt" in content
+
+
     def test_create_integrity_failure(self, mocker):
         """
         Test the create_integrity method for failure when no files are present
@@ -69,6 +87,37 @@ class TestChecksumIntegrity:
         )
         result = self.checksum_integrity.verify_integrity(integrity_file)
         assert result is True
+
+    def test_verify_integrity_success_pass_itself(self, mocker, tmp_path):
+        """
+        Test the verify_integrity method for successful checksum verification
+        """
+        integrity_file = tmp_path / "integrity.sha256"
+        integrity_file.write_text(
+            "dummychecksum  test_file.txt\n"
+            "dummychecksum  test_file2.txt\n"
+            "dummychecksum  integrity.sha256\n"
+        )
+        mocker.patch.object(
+            self.checksum_integrity, "generate_sha256", return_value="dummychecksum"
+        )
+        result = self.checksum_integrity.verify_integrity(integrity_file)
+        assert result is True
+
+    def test_verify_integrity_failure(self, mocker, tmp_path):
+        """
+        Test the verify_integrity method for failure when checksums do not match
+        """
+        integrity_file = tmp_path / "integrity.sha256"
+        integrity_file.write_text(
+            "dummychecksum  test_file.txt\nwrongchecksum  test_file2.txt\n"
+        )
+        mocker.patch.object(
+            self.checksum_integrity, "generate_sha256", side_effect=RuntimeError("Checksum mismatch")
+        )
+        with pytest.raises(RuntimeError) as exc_info:
+            self.checksum_integrity.verify_integrity(integrity_file)
+        assert "Failed to verify checksum file" in str(exc_info.value)
 
     def test_generate_sha256_with_success(self):
         """
