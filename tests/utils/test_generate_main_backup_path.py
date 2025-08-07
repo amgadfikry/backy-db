@@ -5,13 +5,6 @@ import os
 import platform
 
 
-@pytest.fixture
-def setup_env(monkeypatch, tmp_path):
-    monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.delenv("MAIN_BACKUP_PATH", raising=False)
-    return tmp_path
-
-
 class TestGenerateMainBackupPath:
     """
     Test cases for the generate_main_backup_path function.
@@ -26,7 +19,7 @@ class TestGenerateMainBackupPath:
         ],
     )
     def test_os_generate_main_backup_path_default(
-        self, monkeypatch, setup_env, system_name, expected_parts
+        self, monkeypatch, system_name, expected_parts
     ):
         monkeypatch.setattr(platform, "system", lambda: system_name)
         backup_path = generate_main_backup_path()
@@ -48,7 +41,7 @@ class TestGenerateMainBackupPath:
         ],
     )
     def test_os_generate_main_backup_path_with_subfolder(
-        self, monkeypatch, setup_env, system_name, subfolder, expected_parts
+        self, monkeypatch, system_name, subfolder, expected_parts
     ):
         monkeypatch.setattr(platform, "system", lambda: system_name)
         backup_path = generate_main_backup_path(subfolder)
