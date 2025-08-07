@@ -57,13 +57,8 @@ full-test:
 
 cov:
 	pytest -v tests/ -W ignore::DeprecationWarning \
-		--cov=utils \
-		--cov=storage \
-		--cov=schema \
-		--cov=security \
-		--cov=logger \
-		--cov=databases \
-		--cov=compression \
+		--cov=. \
+		--cov-config=.coveragerc \
 		--cov-report=term-missing \
 
 full-test-cov:
