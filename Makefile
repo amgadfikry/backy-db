@@ -24,9 +24,6 @@ help:
 install-dev:
 	pip install ".[dev]"
 
-install-test:
-	pip install ".[test]"
-
 install-prod:
 	pip install .
 
