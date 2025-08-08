@@ -32,7 +32,7 @@ class LoggerManager:
             logging.Logger: Configured logger instance.
         """
         # Create a path for the logging directory
-        log_path = Path.home() / Path(os.getenv("LOGGING_PATH", "logs/backydb"))
+        log_path = Path.home() / Path(os.getenv("LOGGING_PATH", ".backy/logs"))
         log_path.mkdir(parents=True, exist_ok=True)
 
         # Construct full log file path with log file name or default to logger name
