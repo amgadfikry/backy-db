@@ -1,7 +1,8 @@
 # Makefile
+MAKEFLAGS += --no-print-directory
 
-# Dclare the targets for the Makefile
-.PHONY: help install-dev install-test install-prod start-databases stop-databases test full-test cov lint format clean
+# Declare the targets for the Makefile
+.PHONY: help install-dev install-test install-prod start-databases stop-databases test full-test cov lint format clean full-test-cov
 
 # Define the help target to provide usage instructions
 help:
