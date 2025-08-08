@@ -70,7 +70,7 @@ class CreationMetadata:
             "total_files": len(file_list),
             "total_size": total_size,
             "files": [file.name for file in file_list],
-            "backup_type": self.get_files_extension(),
+            "backup_type": backup_data.get("backup_type"),
             "backup_description": backup_data.get("backup_description", ""),
             "expiry_date": backup_data.get("expiry_date", None),
         }
@@ -89,15 +89,15 @@ class CreationMetadata:
         """
         database_data = self.config.get("database", {})
         database = {
-            "database_type": database_data.get("database_type"),
-            "database_version": version,
+            "db_type": database_data.get("db_type"),
+            "db_version": version,
             "host": database_data.get("host"),
             "port": database_data.get("port"),
             "user": database_data.get("user"),
             "db_name": database_data.get("db_name"),
             "multiple_files": database_data.get("multiple_files"),
             "features": database_data.get("features"),
-            "restore_mode": self.get_files_extension(),
+            "restore_mode": database_data.get("restore_mode"),
             "conflict_mode": database_data.get("conflict_mode", "skip"),
         }
         return database
@@ -220,14 +220,3 @@ class CreationMetadata:
         except Exception as e:
             self.logger.error(f"Failed to create metadata file: {e}")
             raise RuntimeError(f"Failed to create metadata file: {e}")
-
-    def get_files_extension(self) -> str:
-        """
-        Get the file extension based on the configuration.
-        Returns:
-            str: The file extension for the backup files.
-        """
-        if self.config.get("compression"):
-            return "backy"
-        else:
-            return "sql"
