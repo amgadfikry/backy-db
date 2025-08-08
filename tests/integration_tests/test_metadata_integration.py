@@ -32,11 +32,12 @@ class TestMetadataIntegration:
         # Create configuration that pass to metadata creation
         config = {
             "backup": {
+                "backup_type": "backy",
                 "backup_description": "Test backup",
                 "expiry_date": "2023-12-31",
             },
             "database": {
-                "database_type": "PostgreSQL",
+                "db_type": "PostgreSQL",
                 "database_version": "13.3",
                 "host": "localhost",
                 "port": 5432,
@@ -44,6 +45,7 @@ class TestMetadataIntegration:
                 "db_name": "test_db",
                 "multiple_files": True,
                 "features": {"tables": True, "data": True},
+                "restore_mode": "backy",
                 "conflict_mode": "skip",
             },
             "compression": {
@@ -105,8 +107,8 @@ class TestMetadataIntegration:
 
         # Extract database metadata and verify
         database_metadata = extraction_metadata.get_database_metadata()
-        assert database_metadata["database_type"] == config["database"]["database_type"]
-        assert database_metadata["database_version"] == version
+        assert database_metadata["db_type"] == config["database"]["db_type"]
+        assert database_metadata["db_version"] == version
         assert database_metadata["host"] == config["database"]["host"]
         assert database_metadata["port"] == config["database"]["port"]
         assert database_metadata["user"] == config["database"]["user"]

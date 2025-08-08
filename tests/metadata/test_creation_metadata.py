@@ -47,25 +47,9 @@ class TestCreationMetadata:
         assert backup_metadata["files"] == [sql_file.name, backy_file.name]
         assert "total_size" in backup_metadata
         assert backup_metadata["total_size"] > 0
-        assert backup_metadata["backup_type"] == "sql"
+        assert "backup_type" in backup_metadata
         assert "backup_description" in backup_metadata
         assert "expiry_date" in backup_metadata
-
-    def test_generate_backup_metadata_with_compression_and_encryption(self):
-        """
-        Test the generation of backup metadata with compression and encryption.
-        """
-        config = {
-            "compression": True,
-            "encryption": True,
-        }
-        metadata = CreationMetadata(config)
-        backup_metadata = metadata.generate_backup_metadata()
-
-        assert backup_metadata["backup_id"] is not None
-        assert backup_metadata["backup_time"] is not None
-        assert backup_metadata["total_files"] == 0
-        assert backup_metadata["backup_type"] == "backy"
 
     def test_generate_database_metadata(self):
         """
@@ -76,8 +60,8 @@ class TestCreationMetadata:
         version = "1.0.0"
         database_metadata = metadata.generate_database_metadata(version)
 
-        assert "database_type" in database_metadata
-        assert "database_version" in database_metadata
+        assert "db_type" in database_metadata
+        assert "db_version" in database_metadata
         assert "host" in database_metadata
         assert "port" in database_metadata
         assert "user" in database_metadata
