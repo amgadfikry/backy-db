@@ -14,7 +14,7 @@ class KeyStoreManager:
 
     # Mapping of store types to their respective implementations
     STORE_MAPPING = {
-        "google": GoogleKeyStore,
+        "gcp": GoogleKeyStore,
         "local": LocalKeyStore,
     }
 

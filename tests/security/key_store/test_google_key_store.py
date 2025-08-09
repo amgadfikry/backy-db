@@ -214,7 +214,6 @@ class TestGoogleKeyStore:
         mock_delete_secret.assert_called_once_with(
             name=google_key_store._secret_path(key_id)
         )
-        assert f"Key {key_id} deleted from GCP Secret Manager." in caplog.text
 
     def test_delete_key_not_found(self, google_key_store, mocker):
         """

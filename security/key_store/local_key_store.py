@@ -138,4 +138,5 @@ class LocalKeyStore(KeyStoreBase):
             )
             return latest_key[0]
 
+        store_path.mkdir(parents=True, exist_ok=True)
         return store_path / f"{key_id}.pem"
