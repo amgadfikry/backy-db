@@ -37,7 +37,6 @@ class DecryptionService:
             raise ValueError("No symmetric key provided for decryption")
 
         try:
-            print(f"Using symmetric key: {symmetric_key.hex()}")
             nonce = encrypted_blob[:12]
             ciphertext = encrypted_blob[12:]
             aesgcm = AESGCM(symmetric_key)

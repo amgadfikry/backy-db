@@ -37,7 +37,6 @@ class EncryptionService:
             raise ValueError("No symmetric key provided for encryption")
 
         try:
-            print(f"Encrypting data with symmetric key: {symmetric_key.hex()}")
             aesgcm = AESGCM(symmetric_key)
             nonce = os.urandom(12)
             ciphertext = aesgcm.encrypt(nonce, data, None)

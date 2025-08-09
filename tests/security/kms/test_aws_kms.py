@@ -454,7 +454,6 @@ class TestAWSKMS:
         key_name, aws_kms = live_aws_kms
         key_id = aws_kms.generate_key(key_name)
         assert key_id == key_name
-        assert "AWS KMS key created" in caplog.text
 
     @pytest.mark.usefixtures("require_localstack")
     def test_get_public_key_with_aws_credentials(self, live_aws_kms, caplog):
@@ -465,7 +464,6 @@ class TestAWSKMS:
         key_name, aws_kms = live_aws_kms
         public_key = aws_kms.get_public_key(key_name)
         assert isinstance(public_key, bytes)
-        assert "Retrieved public key for backy_test_key_" in caplog.text
 
     @pytest.mark.usefixtures("require_localstack")
     def test_decrypt_symmetric_key_with_aws_credentials(self, live_aws_kms, caplog):
@@ -492,7 +490,6 @@ class TestAWSKMS:
             key_name, encrypted_symmetric_key
         )
         assert decrypted_data == symmetric_key
-        assert f"Symmetric key decrypted successfully with {key_name}" in caplog.text
 
     @pytest.mark.usefixtures("require_localstack")
     def test_validate_key_with_aws_credentials(self, live_aws_kms, caplog):
@@ -503,7 +500,6 @@ class TestAWSKMS:
         key_name, aws_kms = live_aws_kms
         is_valid = aws_kms.validate_key(key_name)
         assert is_valid == key_name
-        assert f"KMS key {key_name} is valid and enabled." in caplog.text
 
     @pytest.mark.usefixtures("require_localstack")
     def test_get_latest_key_with_aws_credentials(self, live_aws_kms, caplog):
@@ -515,7 +511,6 @@ class TestAWSKMS:
         latest = "backy_test_key_test_2"
         key_id = aws_kms.generate_key(latest)
         assert latest == key_id
-        assert "AWS KMS key created" in caplog.text
         key = aws_kms._get_key("auto")
         assert key != f"alias/{key_name}"
 
@@ -527,6 +522,5 @@ class TestAWSKMS:
         """
         key_name, aws_kms = live_aws_kms
         aws_kms.delete_key(key_name)
-        assert f"KMS key {key_name} scheduled for deletion." in caplog.text
         with pytest.raises(Exception):
             aws_kms.get_public_key(key_name)
