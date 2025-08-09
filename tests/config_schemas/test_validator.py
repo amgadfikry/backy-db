@@ -239,7 +239,7 @@ class TestValidator:
         monkeypatch.setenv("LOGGING_PATH", "/var/logs")
         monkeypatch.setenv("LOCAL_PATH", "/backups")
         monkeypatch.setenv("GCP_PROJECT_ID", "gcp_project_id")
-        monkeypatch.setenv("GCP_SERVICE_ACCOUNT_KEY", "gcp_service_account_key")
+        monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "gcp_service_account_key")
         self.env_config["security"]["encryption"] = True
         self.env_config["security"]["type"] = "keystore"
         self.env_config["security"]["provider"] = "gcp"
