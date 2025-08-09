@@ -19,7 +19,7 @@ class LoggerManager:
 
     @staticmethod
     def setup_logger(
-        name: str = "backydb", log_file: Union[str, Path] = None, level=logging.DEBUG
+        name: str = "backydb", log_file: Union[str, Path] = None, level=logging.ERROR
     ) -> logging.Logger:
         """
         Set up a logger with the specified name and log file.
