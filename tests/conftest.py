@@ -73,6 +73,7 @@ def configure_logging_path(tmp_path, monkeypatch):
     and sets the corresponding environment variables.
     """
     # change home directory to tmp_path
+    monkeypatch.setenv("PRIVATE_KEY_PASSWORD", "test-password")
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Create logging and backup directories and set environment variables
