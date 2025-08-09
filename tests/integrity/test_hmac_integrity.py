@@ -108,7 +108,7 @@ class TestHMACIntegrity:
         mocker.patch.object(
             self.checksum_integrity, "compute_hmac", return_value="dummychecksum"
         )
-        result = self.checksum_integrity.verify_integrity(integrity_file)
+        result = self.checksum_integrity.verify_integrity()
         assert result is True
 
     def test_verify_integrity_passing_itself(self, mocker, tmp_path):
@@ -129,7 +129,7 @@ class TestHMACIntegrity:
         mocker.patch.object(
             self.checksum_integrity, "compute_hmac", return_value="dummychecksum"
         )
-        result = self.checksum_integrity.verify_integrity(integrity_file)
+        result = self.checksum_integrity.verify_integrity()
         assert result is True
 
     def test_verify_integrity_not_saltt_found(self, mocker, tmp_path):
@@ -138,7 +138,7 @@ class TestHMACIntegrity:
         """
         integrity_file = tmp_path / "integrity.hmac"
         integrity_file.write_text("dummychecksum  test_file.txt\n")
-        result = self.checksum_integrity.verify_integrity(integrity_file)
+        result = self.checksum_integrity.verify_integrity()
         assert result is False
 
     def test_verify_integrity_failure(self, mocker, tmp_path):
@@ -148,7 +148,7 @@ class TestHMACIntegrity:
         integrity_file = tmp_path / "integrity.hmac"
         mocker.patch("builtins.open", side_effect=IOError("Failed to open file"))
         with pytest.raises(RuntimeError) as exc_info:
-            self.checksum_integrity.verify_integrity(integrity_file)
+            self.checksum_integrity.verify_integrity()
         assert "Failed to verify integrity" in str(exc_info.value)
 
     def test_derived_key_success(self):

@@ -88,7 +88,7 @@ class TestChecksumIntegrity:
         mocker.patch.object(
             self.checksum_integrity, "generate_sha256", return_value="dummychecksum"
         )
-        result = self.checksum_integrity.verify_integrity(integrity_file)
+        result = self.checksum_integrity.verify_integrity()
         assert result is True
 
     def test_verify_integrity_success_pass_itself(self, mocker, tmp_path):
@@ -104,7 +104,7 @@ class TestChecksumIntegrity:
         mocker.patch.object(
             self.checksum_integrity, "generate_sha256", return_value="dummychecksum"
         )
-        result = self.checksum_integrity.verify_integrity(integrity_file)
+        result = self.checksum_integrity.verify_integrity()
         assert result is True
 
     def test_verify_integrity_failure(self, mocker, tmp_path):
@@ -121,7 +121,7 @@ class TestChecksumIntegrity:
             side_effect=RuntimeError("Checksum mismatch"),
         )
         with pytest.raises(RuntimeError) as exc_info:
-            self.checksum_integrity.verify_integrity(integrity_file)
+            self.checksum_integrity.verify_integrity()
         assert "Failed to verify checksum file" in str(exc_info.value)
 
     def test_generate_sha256_with_success(self):
