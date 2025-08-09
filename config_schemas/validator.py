@@ -136,7 +136,7 @@ class Validator:
         """
         required_vars = ["DB_PASSWORD", "LOGGING_PATH"]
         aws_vars = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"]
-        gcp_vars = ["GCP_PROJECT_ID", "GCP_SERVICE_ACCOUNT_KEY"]
+        gcp_vars = ["GCP_PROJECT_ID", "GOOGLE_APPLICATION_CREDENTIALS"]
 
         security = config.get("security", {})
         if security and security.get("encryption"):
