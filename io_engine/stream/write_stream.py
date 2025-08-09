@@ -47,7 +47,7 @@ class WriteStream(StreamBase):
 
             # Check if the current size exceeds the threshold
             if self.current_size >= self.threshold:
-                self.logger.warning(
+                self.logger.info(
                     f"Syncing to disk (written {self.current_size} bytes since last sync)."
                 )
                 os.fsync(self.stream.fileno())
