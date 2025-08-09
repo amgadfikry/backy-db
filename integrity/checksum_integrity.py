@@ -56,7 +56,7 @@ class ChecksumIntegrity(IntegrityBase):
             self.logger.error(f"Error creating checksum file: {e}")
             raise RuntimeError("Failed to create checksum file") from e
 
-    def verify_integrity(self, integrity_file: Path) -> bool:
+    def verify_integrity(self) -> bool:
         """
         Verify the integrity of the backup files using the checksum file.
         This method will read the checksum file and compare it with the actual files.
@@ -64,6 +64,7 @@ class ChecksumIntegrity(IntegrityBase):
             bool: True if all files match their checksums, False otherwise.
         """
         # check if the integrity file exists and is a file
+        integrity_file = self.processing_path / "integrity.sha256"
         self.check_path(integrity_file)
 
         try:

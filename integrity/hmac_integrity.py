@@ -106,7 +106,7 @@ class HMACIntegrity(IntegrityBase):
             self.logger.error(f"Error creating integrity file: {e}")
             raise RuntimeError("Failed to create integrity file") from e
 
-    def verify_integrity(self, integrity_file: Path) -> bool:
+    def verify_integrity(self) -> bool:
         """
         Verify the integrity of the files in the processing path.
         This will compare the hmac in the integrity file with the actual files.
@@ -114,6 +114,7 @@ class HMACIntegrity(IntegrityBase):
             bool: True if all files match their hmac, False otherwise.
         """
         # Get the integrity file and ensure it exists
+        integrity_file = self.processing_path / "integrity.hmac"
         self.check_path(integrity_file)
 
         try:
