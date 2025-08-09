@@ -111,7 +111,9 @@ class TestMySQLRestore:
         mock_cursor = mocker.Mock()
         mock_execute = mocker.patch.object(restore, "execute_with_conflict_handling")
         mock_utils = mocker.patch.object(
-            MySQLUtils, "clean_single_sql_statement", return_value="CREATE TABLE test (id INT);"
+            MySQLUtils,
+            "clean_single_sql_statement",
+            return_value="CREATE TABLE test (id INT);",
         )
 
         restore.restore_statement(mock_cursor, "CREATE TABLE test (id INT);")

@@ -141,11 +141,10 @@ class TestHMACIntegrity:
         result = self.checksum_integrity.verify_integrity()
         assert result is False
 
-    def test_verify_integrity_failure(self, mocker, tmp_path):
+    def test_verify_integrity_failure(self, mocker):
         """
         Test the verify_integrity method for failure when checksums do not match
         """
-        integrity_file = tmp_path / "integrity.hmac"
         mocker.patch("builtins.open", side_effect=IOError("Failed to open file"))
         with pytest.raises(RuntimeError) as exc_info:
             self.checksum_integrity.verify_integrity()

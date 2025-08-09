@@ -124,4 +124,3 @@ class BackyDB:
             # Step 11: Clean up the processing path after restoration
             if restore_manager:
                 delete_folder(Path(restore_manager.processing_path))
-

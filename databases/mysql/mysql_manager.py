@@ -3,7 +3,6 @@ import mysql.connector
 from typing import List, Iterator, Tuple
 from databases.database_base import DatabaseBase
 from databases.mysql.mysql_streaming import MySQLStreaming
-from databases.mysql.mysql_utils import MySQLUtils
 from databases.mysql.mysql_restore import MySQLRestore
 
 

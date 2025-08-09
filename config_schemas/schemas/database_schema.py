@@ -113,7 +113,9 @@ class DatabaseRestoreSchema(BaseModel):
     )
     port: int = Field(..., description="Database port number.", example=3306)
     user: str = Field(..., description="Database user name.", example="root")
-    db_name: str = Field(..., description="Database name to restore.", example="my_database")
+    db_name: str = Field(
+        ..., description="Database name to restore.", example="my_database"
+    )
     features: MySQLFeaturesSchema = Field(
         default_factory=MySQLFeaturesSchema,
         description="Features to restore for the MySQL database.",

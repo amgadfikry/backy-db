@@ -133,7 +133,7 @@ class BackupManager(ManagerContext):
         self.logger.info("folder is compressed successfully")
 
         storage_manager = StorageManager(self.storage_config)
-        file =storage_manager.upload(compressed_file)
+        file = storage_manager.upload(compressed_file)
         self.logger.info("compressed file is uploaded successfully")
 
         compressed_file.unlink(missing_ok=True)

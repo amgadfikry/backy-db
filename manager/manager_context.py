@@ -56,7 +56,7 @@ class ManagerContext:
         """
         if backup_type is None:
             backup_type = self.backup_info["backup_type"]
-        db_name = self.validated_config['database']['db_name']
+        db_name = self.validated_config["database"]["db_name"]
         self.io_creator = IOCreator(backup_type, db_name)
         self.processing_path = self.io_creator.processing_path
         self.logger.info("Processing is created successfully at")

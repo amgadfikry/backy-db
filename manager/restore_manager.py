@@ -1,6 +1,6 @@
 # manager/restore_manager.py
 from manager.manager_context import ManagerContext
-from typing import Iterator, Union
+from typing import Union
 from pathlib import Path
 from storage.storage_manager import StorageManager
 from compression.compression_manager import CompressionManager
@@ -21,7 +21,6 @@ class RestoreManager(ManagerContext):
         """
         super().__init__(config)
 
-
     def validate_config(self, config):
         """
         Validate the configuration by validator
@@ -37,15 +36,15 @@ class RestoreManager(ManagerContext):
         the backup files based on the provided configuration.
         """
         # Implementation of download and extraction logic goes here
-        storage_config = self.validated_config['storage']
-        file_path = self.validated_config['backup_path']
+        storage_config = self.validated_config["storage"]
+        file_path = self.validated_config["backup_path"]
         storage_manager = StorageManager(storage_config)
         downloaded_file = storage_manager.download(file_path)
 
         compressor = CompressionManager("zip")
         extracted_files = compressor.decompress_folder(Path(downloaded_file))
         return extracted_files
-    
+
     def align_metadata_with_config(self) -> None:
         """
         Align the metadata with the configuration.
@@ -55,15 +54,15 @@ class RestoreManager(ManagerContext):
         self.metadata = ExtractionMetadata()
         metadata_dict = self.metadata.get_full_metadata()
 
-        restore_features = self.validated_config['database']['features']
-        backup_features = metadata_dict['database']['features']
+        restore_features = self.validated_config["database"]["features"]
+        backup_features = metadata_dict["database"]["features"]
         for feature, value in restore_features.items():
             if value and not backup_features[feature]:
                 restore_features[feature] = False
 
-        for key, value in self.validated_config['database'].items():
-            metadata_dict['database'][key] = value
-        
+        for key, value in self.validated_config["database"].items():
+            metadata_dict["database"][key] = value
+
         validator = Validator()
         validator.validate_restore_metadata(metadata_dict)
         self.validated_config = metadata_dict
@@ -77,7 +76,7 @@ class RestoreManager(ManagerContext):
         if self.integrator:
             self.integrator.verify_integrity()
             self.logger.info("Integrity check passed successfully")
-        
+
     def arrange_files_for_restore(self) -> None:
         """
         Arrange the files for restore.
@@ -87,30 +86,38 @@ class RestoreManager(ManagerContext):
         # Implementation of file arrangement logic goes here
         # get all files in the processing path with specif backup type
         database_order = {
-            "mysql": ["tables", "data", "views", "functions", "procedures", "triggers", "events"]
+            "mysql": [
+                "tables",
+                "data",
+                "views",
+                "functions",
+                "procedures",
+                "triggers",
+                "events",
+            ]
         }
-        backup_type = self.backup_info['backup_type']
-        db_type = self.database_config['db_type']
+        backup_type = self.backup_info["backup_type"]
+        db_type = self.database_config["db_type"]
         files = list(Path(self.processing_path).glob(f"*.{backup_type}"))
 
         if not files:
             self.logger.error("No files found for restore")
             raise RuntimeError("No files found for restore")
-        
+
         if len(files) == 1:
             return [files[0]]
-        
+
         # If multiple files, sort them by name  accoring to database restore order
         # And not add files that are not in features
         sorted_files = []
-        features = self.database_config['features']
+        features = self.database_config["features"]
         for order in database_order.get(db_type, []):
             for file in files:
                 if order in file.name and features.get(order, False):
                     sorted_files.append(file)
-        
+
         return sorted_files
-    
+
     def read_file(self, file_path: Path, db: object) -> None:
         """
         Read the file and restore its content to the database.
@@ -119,9 +126,9 @@ class RestoreManager(ManagerContext):
             db (object): The database manager instance to restore the data.
         """
 
-        backup_type = self.backup_info['backup_type']
+        backup_type = self.backup_info["backup_type"]
         if backup_type == "sql":
-            feature = str(file_path.name).split('_')[0]
+            feature = str(file_path.name).split("_")[0]
             db.restore((feature, str(file_path)))
         else:
             read = ReadStream(file_path)
@@ -149,4 +156,3 @@ class RestoreManager(ManagerContext):
             statement = self.compressor.decompress_bytes(statement)
         statement = self.converter.convert_bytes_to_str(statement)
         return statement
-
