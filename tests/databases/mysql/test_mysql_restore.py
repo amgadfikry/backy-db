@@ -110,9 +110,13 @@ class TestMySQLRestore:
         restore = MySQLRestore(db_name="test_db")
         mock_cursor = mocker.Mock()
         mock_execute = mocker.patch.object(restore, "execute_with_conflict_handling")
+        mock_utils = mocker.patch.object(
+            MySQLUtils, "clean_single_sql_statement", return_value="CREATE TABLE test (id INT);"
+        )
 
         restore.restore_statement(mock_cursor, "CREATE TABLE test (id INT);")
         mock_execute.assert_called_once_with(mock_cursor, "CREATE TABLE test (id INT);")
+        mock_utils.assert_called_once_with("CREATE TABLE test (id INT);")
 
     @pytest.mark.usefixtures("require_mysql")
     def test_execute_with_conflict_handling(self, live_database, mocker):

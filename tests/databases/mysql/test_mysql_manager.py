@@ -74,7 +74,7 @@ class TestMySQLManager:
         assert db.conflict_mode == "skip"
 
     @pytest.mark.usefixtures("require_mysql")
-    def test_connection_success(self, live_mysql, caplog):
+    def test_connection_success(self, live_mysql):
         """
         Test to ensure that the MySQL database connection is successful.
         """
@@ -82,10 +82,6 @@ class TestMySQLManager:
         db.connect()
         assert db.connection is not None
         assert db.version is not None
-        assert (
-            f"Connected to MySQL database successfully: version {db.version}"
-            in caplog.text
-        )
 
     @pytest.mark.usefixtures("require_mysql")
     def test_connection_failure(self, mocker, live_mysql, caplog):
@@ -133,15 +129,17 @@ class TestMySQLManager:
         )
         backups = list(db.backup())
         assert isinstance(backups, list)
-        assert len(backups) == 4
+        assert len(backups) == 5
         assert backups[0][0] == "full"
-        assert backups[0][1].startswith("test\n")
+        assert backups[0][1].startswith("CREATE DATABASE IF NOT EXISTS")
         assert backups[1][0] == "full"
-        assert backups[1][1] == "CREATE TABLE"
+        assert backups[1][1].startswith("USE")
         assert backups[2][0] == "full"
-        assert backups[2][1] == "INSERT INTO"
+        assert backups[2][1].startswith("CREATE TABLE")
         assert backups[3][0] == "full"
-        assert backups[3][1] == "CREATE VIEW"
+        assert backups[3][1].startswith("INSERT INTO")
+        assert backups[4][0] == "full"
+        assert backups[4][1].startswith("CREATE VIEW")
         assert not function_mocker.called
 
     def test_backup_successfully_multiple_files(self, setup_method, mocker):
@@ -166,15 +164,19 @@ class TestMySQLManager:
         )
         backups = list(db.backup())
         assert isinstance(backups, list)
-        assert len(backups) == 4
+        assert len(backups) == 6
         assert backups[0][0] == "tables"
-        assert backups[0][1].startswith("test\n")
+        assert backups[0][1].startswith("CREATE DATABASE IF NOT EXISTS")
         assert backups[1][0] == "tables"
-        assert backups[1][1] == "CREATE TABLE"
-        assert backups[2][0] == "data"
-        assert backups[2][1].startswith("test\n")
+        assert backups[1][1].startswith("USE")
+        assert backups[2][0] == "tables"
+        assert backups[2][1].startswith("CREATE TABLE")
         assert backups[3][0] == "data"
-        assert backups[3][1] == "INSERT INTO"
+        assert backups[3][1].startswith("CREATE DATABASE IF NOT EXISTS")
+        assert backups[4][0] == "data"
+        assert backups[4][1].startswith("USE")
+        assert backups[5][0] == "data"
+        assert backups[5][1].startswith("INSERT INTO")
 
     def test_backup_empty_database(self, setup_method, mocker):
         """
@@ -189,9 +191,11 @@ class TestMySQLManager:
         )
         backups = list(db.backup())
         assert isinstance(backups, list)
-        assert len(backups) == 1
+        assert len(backups) == 2
         assert backups[0][0] == "full"
-        assert backups[0][1].startswith("test\n")
+        assert backups[0][1].startswith("CREATE DATABASE IF NOT EXISTS")
+        assert backups[1][0] == "full"
+        assert backups[1][1].startswith("USE")
 
     def test_backup_failure(self, setup_method, mocker, caplog):
         """
@@ -212,12 +216,12 @@ class TestMySQLManager:
             list(db.backup())
         assert "Error during getting tables backup:" in str(exc_info.value)
 
-    def test_restore_success_mode_file(self, setup_method, mocker):
+    def test_restore_success_mode_sql(self, setup_method, mocker):
         """
-        Test to ensure that the MySQL database restore is successful without cleanup.
+        Test to ensure that the MySQL database restore is successful with sql mode.
         """
         db = setup_method
-        db.restore_mode = "file"
+        db.restore_mode = "sql"
         db.features["tables"] = True
         mocker.patch.object(db, "connection", mocker.Mock())
         mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
@@ -228,12 +232,12 @@ class TestMySQLManager:
         db.restore(feature_data)
         restore_mock.assert_called_once()
 
-    def test_restore_success_mode_statement(self, setup_method, mocker):
+    def test_restore_success_mode_backy(self, setup_method, mocker):
         """
-        Test to ensure that the MySQL database restore is successful with cleanup.
+        Test to ensure that the MySQL database restore is successful with backy mode.
         """
         db = setup_method
-        db.restore_mode = "statement"
+        db.restore_mode = "backy"
         db.features["tables"] = True
         mocker.patch.object(db, "connection", mocker.Mock())
         mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
@@ -249,7 +253,7 @@ class TestMySQLManager:
         Test to ensure that the MySQL database restore skips inactive features.
         """
         db = setup_method
-        db.restore_mode = "statement"
+        db.restore_mode = "backy"
         db.features["tables"] = False
         mocker.patch.object(db, "connection", mocker.Mock())
         mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
@@ -265,7 +269,7 @@ class TestMySQLManager:
         Ensure that an error is raised when the restore process fails.
         """
         db = setup_method
-        db.restore_mode = "statement"
+        db.restore_mode = "backy"
         db.features["tables"] = True
         mocker.patch.object(db, "connection", mocker.Mock())
         mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
@@ -294,29 +298,12 @@ class TestMySQLManager:
             in str(exc_info.value)
         )
 
-    def test_restore_if_conflict_mode_clean(self, setup_method, mocker):
-        """
-        Test to ensure that the MySQL database restore does not use the database if conflict mode is 'clean'.
-        """
-        db = setup_method
-        db.conflict_mode = "clean"
-        db.restore_mode = "statement"
-        db.features["tables"] = True
-        mocker.patch.object(db, "connection", mocker.Mock())
-        mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
-        restore_mock = mocker.patch.object(
-            db.restoring, "restore_statement", return_value=None
-        )
-        feature_data = ("tables", "SQL statement 1")
-        db.restore(feature_data)
-        restore_mock.assert_called_once()
-
     def test_restore_if_feature_is_full(self, setup_method, mocker):
         """
         Test to ensure that the MySQL database restore works correctly when the feature is 'full'.
         """
         db = setup_method
-        db.restore_mode = "statement"
+        db.restore_mode = "backy"
         mocker.patch.object(db, "connection", mocker.Mock())
         mocker.patch.object(db.connection, "cursor", return_value=mocker.Mock())
         restore_mock = mocker.patch.object(

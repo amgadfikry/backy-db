@@ -173,7 +173,6 @@ class TestMySQLUtils:
 
         statements = list(MySQLUtils.convert_mysql_file_to_statments(str(file_path)))
         assert len(statements) == 1
-        print(f"Statements: {statements}")
         assert statements[0] == "CREATE DATABASE IF NOT EXISTS `test_db`"
 
     def test_convert_mysql_file_to_statments_empty_file(self, tmp_path):
@@ -384,3 +383,235 @@ class TestMySQLUtils:
         assert statements[1] == "INSERT INTO test (id) VALUES (1)"
         assert statements[2] == "UPDATE test SET id = 2 WHERE id = 1"
         assert statements[3] == "DELETE FROM test WHERE id = 2"
+
+    def test_clean_single_sql_statement_empty(self):
+        """
+        Test the cleaning of an empty SQL statement.
+        """
+        sql = ""
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        assert cleaned == ""
+
+    def test_clean_single_sql_statement_comment_only(self):
+        """
+        Test the cleaning of a SQL statement that contains only comments.
+        """
+        sql = "-- This is a comment"
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        assert cleaned == ""
+
+    def test_clean_single_sql_statement_create_database_statement(self):
+        """
+        Test the cleaning of a CREATE DATABASE SQL statement.
+        """
+        sql = (
+            "-- CREATE DATABASE `test_db`\n"
+            "CREATE DATABASE `test_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = "CREATE DATABASE `test_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_use_database_statement(self):
+        """
+        Test the cleaning of a USE DATABASE SQL statement.
+        """
+        sql = "-- USE `test_db`\nUSE `test_db`;"
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = "USE `test_db`"
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_table_statement(self):
+        """
+        Test the cleaning of a single SQL statement.
+        """
+        sql = (
+            "-- CREATE TABLE `users`\n"
+            "CREATE TABLE `users` (\n"
+            "  `user_id` int NOT NULL AUTO_INCREMENT,\n"
+            "  `username` varchar(50) NOT NULL,\n"
+            "  PRIMARY KEY (`user_id`)\n"
+            ") ENGINE=InnoDB AUTO_INCREMENT=1048561 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE TABLE `users` (\n"
+            "  `user_id` int NOT NULL AUTO_INCREMENT,\n"
+            "  `username` varchar(50) NOT NULL,\n"
+            "  PRIMARY KEY (`user_id`)\n"
+            ") ENGINE=InnoDB AUTO_INCREMENT=1048561 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+        )
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_insert_statement(self):
+        """
+        Test the cleaning of an INSERT SQL statement.
+        """
+        sql = (
+            "-- INSERT INTO `users` VALUES\n"
+            "INSERT INTO `users` VALUES\n"
+            "\t(1, 'user_1'),\n"
+            "\t(2, 'user_2'),\n"
+            "\t(3, 'user_3');"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "INSERT INTO `users` VALUES\n"
+            "\t(1, 'user_1'),\n"
+            "\t(2, 'user_2'),\n"
+            "\t(3, 'user_3')"
+        )
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_views_statement(self):
+        """
+        Test the cleaning of a VIEW SQL statement.
+        """
+        sql = (
+            "-- CREATE VIEW `user_view`\n"
+            "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v_orders_users_50k` AS\n"
+            "SELECT `o`.`order_id` AS `order_id`,\n"
+            "`o`.`order_date` AS `order_date`,\n"
+            "`u`.`username` AS `username`\n"
+            "FROM (`orders` `o`\n"
+            "JOIN `users` `u` on((`o`.`user_id` = `u`.`user_id`)))\n"
+            "ORDER BY `o`.`order_id`\n"
+            "LIMIT 50000;"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v_orders_users_50k` AS\n"
+            "SELECT `o`.`order_id` AS `order_id`,\n"
+            "`o`.`order_date` AS `order_date`,\n"
+            "`u`.`username` AS `username`\n"
+            "FROM (`orders` `o`\n"
+            "JOIN `users` `u` on((`o`.`user_id` = `u`.`user_id`)))\n"
+            "ORDER BY `o`.`order_id`\n"
+            "LIMIT 50000"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_function_statement(self):
+        """
+        Test the cleaning of a FUNCTION SQL statement.
+        """
+        sql = (
+            "-- Create Get_total_orders_for_user Function\n"
+            "DELIMITER $$\n"
+            "CREATE DEFINER=`root`@`%` FUNCTION `get_total_orders_for_user`(p_user_id INT) RETURNS int\n"
+            "    DETERMINISTIC\n"
+            "BEGIN\n"
+            "    DECLARE order_count INT;\n"
+            "    SELECT COUNT(*) INTO order_count\n"
+            "    FROM orders\n"
+            "    WHERE user_id = p_user_id;\n"
+            "    RETURN IFNULL(order_count, 0);\n"
+            "END\n"
+            "$$\n"
+            "DELIMITER ;"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE DEFINER=`root`@`%` FUNCTION `get_total_orders_for_user`(p_user_id INT) RETURNS int\n"
+            "    DETERMINISTIC\n"
+            "BEGIN\n"
+            "    DECLARE order_count INT;\n"
+            "    SELECT COUNT(*) INTO order_count\n"
+            "    FROM orders\n"
+            "    WHERE user_id = p_user_id;\n"
+            "    RETURN IFNULL(order_count, 0);\n"
+            "END"
+        )
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_procedure_statement(self):
+        """
+        Test the cleaning of a PROCEDURE SQL statement.
+        """
+        sql = (
+            "-- Create Sp_get_total_orders_for_user Procedure\n"
+            "DELIMITER //\n"
+            "CREATE DEFINER=`root`@`%` PROCEDURE `sp_get_total_orders_for_user`(IN p_user_id INT, OUT p_order_count INT)\n"
+            "BEGIN\n"
+            "    SELECT COUNT(*) INTO p_order_count\n"
+            "    FROM orders\n"
+            "    WHERE user_id = p_user_id;\n"
+            "END\n"
+            "//\n"
+            "DELIMITER ;\n\n"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE DEFINER=`root`@`%` PROCEDURE `sp_get_total_orders_for_user`(IN p_user_id INT, OUT p_order_count INT)\n"
+            "BEGIN\n"
+            "    SELECT COUNT(*) INTO p_order_count\n"
+            "    FROM orders\n"
+            "    WHERE user_id = p_user_id;\n"
+            "END"
+        )
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_trigger_statement(self):
+        """
+        Test the cleaning of a TRIGGER SQL statement.
+        """
+        sql = (
+            "-- Create Trg_after_order_item_insert Trigger\n"
+            "DELIMITER $$\n"
+            "CREATE DEFINER=`root`@`%` TRIGGER `trg_after_order_item_insert` AFTER INSERT ON `order_items` FOR EACH ROW BEGIN\n"
+            "    INSERT INTO user_activity_log(user_id, activity)\n"
+            "    VALUES (NEW.user_id, CONCAT('New order item added: ', NEW.product_name, ', qty: ', NEW.quantity));\n"
+            "END\n"
+            "$$\n"
+            "DELIMITER ;\n\n"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE DEFINER=`root`@`%` TRIGGER `trg_after_order_item_insert` AFTER INSERT ON `order_items` FOR EACH ROW BEGIN\n"
+            "    INSERT INTO user_activity_log(user_id, activity)\n"
+            "    VALUES (NEW.user_id, CONCAT('New order item added: ', NEW.product_name, ', qty: ', NEW.quantity));\n"
+            "END"
+        )
+        assert cleaned == expected
+
+    def test_clean_single_sql_statement_event_statement(self):
+        """
+        Test the cleaning of an EVENT SQL statement.
+        """
+        sql = (
+            "-- Create Ev_log_daily_order_count Event\n"
+            "DELIMITER $$\n"
+            "CREATE DEFINER=`root`@`%` EVENT `ev_log_daily_order_count` ON SCHEDULE EVERY 1 DAY STARTS '2025-08-09 12:55:27' ON COMPLETION NOT PRESERVE DISABLE DO BEGIN\n"
+            "    INSERT INTO user_activity_log(user_id, activity)\n"
+            "    SELECT user_id, CONCAT('Daily order count: ', COUNT(*))\n"
+            "    FROM orders\n"
+            "    GROUP BY user_id;\n"
+            "END;\n"
+            "$$\n"
+            "DELIMITER ;\n"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "CREATE DEFINER=`root`@`%` EVENT `ev_log_daily_order_count` ON SCHEDULE EVERY 1 DAY STARTS '2025-08-09 12:55:27' ON COMPLETION NOT PRESERVE DISABLE DO BEGIN\n"
+            "    INSERT INTO user_activity_log(user_id, activity)\n"
+            "    SELECT user_id, CONCAT('Daily order count: ', COUNT(*))\n"
+            "    FROM orders\n"
+            "    GROUP BY user_id;\n"
+            "END"
+        )
+        assert cleaned == expected
+        
+    def test_clean_single_sql_statement_with_alter_event_statement(self):
+        """
+        Test the cleaning of an ALTER EVENT SQL statement.
+        """
+        sql = (
+            "-- Alter Ev_log_daily_order_count Event\n"
+            "ALTER EVENT `ev_log_daily_order_count` ENABLE;\n"
+        )
+        cleaned = MySQLUtils().clean_single_sql_statement(sql)
+        expected = (
+            "ALTER EVENT `ev_log_daily_order_count` ENABLE"
+        )
+        assert cleaned == expected
