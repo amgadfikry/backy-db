@@ -97,7 +97,7 @@ class TestCreationMetadata:
         assert "provider" in security_metadata
         assert "key_size" in security_metadata
         assert security_metadata["key_version"] == "1"
-        assert security_metadata["encryption_file"] == "backy_secret_key_1.enc"
+        assert security_metadata["encryption_file"] == "backy_public_key_1.enc"
 
     def test_generate_security_metadata_if_there_is_no_key_id(self):
         """
@@ -132,11 +132,9 @@ class TestCreationMetadata:
         """
         config = {"storage": {"storage_type": "local"}}
         metadata = CreationMetadata(config)
-        object_key = "test_object_key"
-        storage_metadata = metadata.generate_storage_metadata(object_key)
+        storage_metadata = metadata.generate_storage_metadata()
 
         assert storage_metadata["storage_type"] == "local"
-        assert storage_metadata["object_key"] == object_key
         assert storage_metadata["bucket_name"] is None
         assert storage_metadata["region"] is None
 
@@ -148,11 +146,9 @@ class TestCreationMetadata:
         monkeypatch.setenv("AWS_REGION", "us-west-2")
         config = {"storage": {"storage_type": "aws"}}
         metadata = CreationMetadata(config)
-        object_key = "test_object_key"
-        storage_metadata = metadata.generate_storage_metadata(object_key)
+        storage_metadata = metadata.generate_storage_metadata()
 
         assert storage_metadata["storage_type"] == "aws"
-        assert storage_metadata["object_key"] == object_key
         assert storage_metadata["bucket_name"] == "test_bucket"
         assert storage_metadata["region"] == "us-west-2"
 
@@ -163,7 +159,6 @@ class TestCreationMetadata:
         config = {}
         version = "1.0.0"
         key_id = "backy_secret_key_1"
-        object_key = "test_object_key"
         metadata = CreationMetadata(config)
         mocker.patch.object(metadata, "generate_general_metadata", return_value={})
         mocker.patch.object(metadata, "generate_backup_metadata", return_value={})
@@ -173,7 +168,7 @@ class TestCreationMetadata:
         mocker.patch.object(metadata, "generate_integrity_metadata", return_value={})
         mocker.patch.object(metadata, "generate_storage_metadata", return_value={})
 
-        full_metadata = metadata.generate_full_metadata(version, key_id, object_key)
+        full_metadata = metadata.generate_full_metadata(version, key_id)
 
         assert isinstance(full_metadata, dict)
         assert "info" in full_metadata
@@ -199,10 +194,9 @@ class TestCreationMetadata:
         config = {"database": {"db_name": "test_db"}}
         version = "1.0.0"
         key_id = "backy_secret_key_1"
-        object_key = "test_object_key"
 
         metadata = CreationMetadata(config)
-        metadata_file_path = metadata.create_metadata_file(version, key_id, object_key)
+        metadata_file_path = metadata.create_metadata_file(version, key_id)
 
         assert Path(metadata_file_path).exists()
         assert Path(metadata_file_path).is_file()
@@ -228,10 +222,9 @@ class TestCreationMetadata:
         config = {}
         version = "1.0.0"
         key_id = "backy_secret_key_1"
-        object_key = "test_object_key"
 
         metadata = CreationMetadata(config)
         mocker.patch("builtins.open", side_effect=RuntimeError("Missing config"))
         with pytest.raises(RuntimeError) as exc_info:
-            metadata.create_metadata_file(version, key_id, object_key)
+            metadata.create_metadata_file(version, key_id)
         assert "Failed to create metadata file: Missing config" in str(exc_info.value)
