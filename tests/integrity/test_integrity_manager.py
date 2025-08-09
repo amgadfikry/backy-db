@@ -29,11 +29,10 @@ class TestIntegrityManager:
         assert integrity_file is not None
         assert self.hmac_mocker.create_integrity.called
 
-    def test_verify_integrity(self, mocker):
+    def test_verify_integrity(self):
         """
         Test the verify_integrity method of IntegrityManager
         """
-        integrity_file = mocker.Mock()
         result = self.integrity_manager.verify_integrity()
         assert result is not None
         assert self.hmac_mocker.verify_integrity.called

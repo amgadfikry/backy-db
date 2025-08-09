@@ -380,5 +380,5 @@ class TestValidator:
         mocker.patch.object(
             self.validator, "_validate_environmental_variables", return_value=None
         )
-        validated_config = self.validator.validate_restore_metadata(self.config_data)
+        self.validator.validate_restore_metadata(self.config_data)
         assert True

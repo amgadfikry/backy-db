@@ -4,6 +4,7 @@ from config_schemas.schemas.database_schema import DatabaseRestoreSchema
 from config_schemas.schemas.storage_schema import StorageSchema
 import pytest
 
+
 class TestRestoreSchema:
     """
     Test cases for RestoreSchema.
@@ -39,4 +40,3 @@ class TestRestoreSchema:
             RestoreSchema()
         assert "validation error" in str(exc_info.value)
         assert "required" in str(exc_info.value)
-    

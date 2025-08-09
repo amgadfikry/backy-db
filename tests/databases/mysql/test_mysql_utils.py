@@ -601,7 +601,7 @@ class TestMySQLUtils:
             "END"
         )
         assert cleaned == expected
-        
+
     def test_clean_single_sql_statement_with_alter_event_statement(self):
         """
         Test the cleaning of an ALTER EVENT SQL statement.
@@ -611,7 +611,5 @@ class TestMySQLUtils:
             "ALTER EVENT `ev_log_daily_order_count` ENABLE;\n"
         )
         cleaned = MySQLUtils().clean_single_sql_statement(sql)
-        expected = (
-            "ALTER EVENT `ev_log_daily_order_count` ENABLE"
-        )
+        expected = "ALTER EVENT `ev_log_daily_order_count` ENABLE"
         assert cleaned == expected

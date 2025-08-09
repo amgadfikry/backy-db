@@ -55,7 +55,7 @@ class Validator:
         config_data = self._validate_according_type(config, "restore")
         self._validate_environmental_variables(config_data)
         return config_data
-    
+
     def validate_restore_metadata(self, config: dict) -> None:
         """
         Validate restore metadata configuration.

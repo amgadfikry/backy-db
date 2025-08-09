@@ -131,7 +131,10 @@ class TestMetadataIntegration:
         assert security_metadata["provider"] == "aws"
         assert security_metadata["key_size"] == 2048
         assert security_metadata["key_version"] == key_id.split("_")[-1]
-        assert security_metadata["encryption_file"] == f"backy_public_key_{key_id.split('_')[-1]}.enc"
+        assert (
+            security_metadata["encryption_file"]
+            == f"backy_public_key_{key_id.split('_')[-1]}.enc"
+        )
 
         # Extract integrity metadata and verify
         integrity_metadata = extraction_metadata.get_integrity_metadata()

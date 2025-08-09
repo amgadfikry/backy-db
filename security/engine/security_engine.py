@@ -28,7 +28,7 @@ class SecurityEngine:
         self.provider = key_management_config.get("provider", "local")
         self.key_size = key_management_config.get("key_size", 4096)
         self.key_version = key_management_config.get("key_version", None)
-        self.encryption_file = key_management_config.get("encryption_file", '')
+        self.encryption_file = key_management_config.get("encryption_file", "")
         self.key_generator = KeyGenerator()
         self.key_utils = KeyUtils()
         self.manager = None
@@ -150,7 +150,9 @@ class SecurityEngine:
         Returns:
             Tuple[bytes, bytes]: The decrypted symmetric key and the encrypted symmetric key.
         """
-        encrypted = self.key_utils.read_encryption_file(self.prcossiong_path / self.encryption_file)
+        encrypted = self.key_utils.read_encryption_file(
+            self.prcossiong_path / self.encryption_file
+        )
         symmetric = self._decrypt_symmetric_key(key_id, encrypted)
         return symmetric, encrypted
 

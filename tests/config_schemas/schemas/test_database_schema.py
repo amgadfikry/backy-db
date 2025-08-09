@@ -1,5 +1,9 @@
 # tests/config_schemas.py/schemas/test_database_schema.py
-from config_schemas.schemas.database_schema import DatabaseSchema, MySQLFeaturesSchema, DatabaseRestoreSchema
+from config_schemas.schemas.database_schema import (
+    DatabaseSchema,
+    MySQLFeaturesSchema,
+    DatabaseRestoreSchema,
+)
 import pytest
 
 
