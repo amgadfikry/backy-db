@@ -64,8 +64,7 @@ class TestConfigSchemaIntegration:
         assert validated_config["backup"]["backup_type"] == "backy"
 
     def test_validate_backup_from_file(self, tmp_path, setup_method):
-        """
-        """
+        """ """
         yaml_file = tmp_path / "backup_config.yaml"
         yaml_file.write_text(yaml.dump(setup_method))
         validator = Validator()
@@ -85,7 +84,9 @@ class TestConfigSchemaIntegration:
         config_data["storage"]["storage_type"] = "aws"
         with pytest.raises(ValueError) as exc_info:
             validator.validate_backup(config_data)
-        assert "Required environmental variable AWS_S3_BUCKET_NAME is not set." in str(exc_info.value)
+        assert "Required environmental variable AWS_S3_BUCKET_NAME is not set." in str(
+            exc_info.value
+        )
 
     def test_validate_backup_with_invalid_schema(self, setup_method):
         """
@@ -135,6 +136,6 @@ class TestConfigSchemaIntegration:
         assert validated_config["storage"]["storage_type"] == "local"
         assert validated_config["security"]["encryption"] is False
         assert validated_config["integrity"]["integrity_check"] is False
-        assert validated_config["integrity"]["integrity_type"] == None
+        assert validated_config["integrity"]["integrity_type"] is None
         assert validated_config["compression"]["compression"] is False
-        assert validated_config["compression"]["compression_type"] == None
+        assert validated_config["compression"]["compression_type"] is None

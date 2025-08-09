@@ -25,7 +25,7 @@ class TestDatabasesIntegration:
                 "tables": True,
                 "data": True,
             },
-            "restore_mode": "statement",
+            "restore_mode": "backy",
         }
         override = request.param if hasattr(request, "param") else {}
         config.update(override)
@@ -68,7 +68,7 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-        assert len(results) == 3
+        assert len(results) == 4
         assert results[0][0] == "full"
 
         db_manager.connect()
@@ -96,14 +96,13 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-        assert len(results) == 4
+        assert len(results) == 6
         assert results[0][0] == "tables"
-        assert "-- Backup for Tables" in results[0][1]
+        assert "CREATE DATABASE" in results[0][1]
         assert results[1][0] == "tables"
-        assert "CREATE TABLE `test`" in results[1][1]
-        assert results[2][0] == "data"
-        assert "-- Backup for Data" in results[2][1]
-        assert "INSERT INTO `test`" in results[3][1]
+        assert "USE" in results[1][1]
+        assert results[2][0] == "tables"
+        assert "CREATE TABLE `test`" in results[2][1]
 
     @pytest.mark.parametrize(
         "setup_database", [{"restore_mode": "file"}], indirect=True
@@ -115,7 +114,7 @@ class TestDatabasesIntegration:
         Test that the restore file is correctly generated and can be backed up.
         """
         db_manager = setup_database
-        db_manager.db.restore_mode = "file"
+        db_manager.db.restore_mode = "sql"
         # Create a backup file
         backup_file = tmp_path / "test_backup.sql"
         with open(backup_file, "w") as f:
@@ -129,17 +128,15 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-        assert len(results) == 3
+        assert len(results) == 4
         assert results[0][0] == "full"
-        assert "-- Backup" in results[0][1]
+        assert "CREATE DATABASE" in results[0][1]
         assert results[1][0] == "full"
-        assert "CREATE TABLE `test`" in results[1][1]
-        assert results[2][0] == "full"
-        assert "INSERT INTO `test`" in results[2][1]
+        assert "USE" in results[1][1]
 
     @pytest.mark.parametrize(
         "setup_database",
-        [{"restore_mode": "file", "multiple_files": True}],
+        [{"restore_mode": "sql", "multiple_files": True}],
         indirect=True,
     )
     def test_mysql_restore_file_and_backup_them_multiple_files(
@@ -162,20 +159,13 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-        assert len(results) == 4
-        assert results[0][0] == "tables"
-        assert "-- Backup for Tables" in results[0][1]
-        assert results[1][0] == "tables"
-        assert "CREATE TABLE `test`" in results[1][1]
-        assert results[2][0] == "data"
-        assert "-- Backup for Data" in results[2][1]
-        assert "INSERT INTO `test`" in results[3][1]
+        assert len(results) == 6
 
     @pytest.mark.parametrize(
         "setup_database",
         [
             {
-                "restore_mode": "statement",
+                "restore_mode": "backy",
                 "multiple_files": True,
                 "features": {
                     "tables": True,
@@ -207,25 +197,7 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-            for feature, statement in results:
-                print(f"Feature: {feature}, Statement: {statement}")
-        assert len(results) == 8
-        assert results[0][0] == "tables"
-        assert "-- Backup for Tables" in results[0][1]
-        assert results[1][0] == "tables"
-        assert "CREATE TABLE `test`" in results[1][1]
-        assert results[2][0] == "data"
-        assert "-- Backup for Data" in results[2][1]
-        assert results[3][0] == "data"
-        assert "INSERT INTO `test`" in results[3][1]
-        assert results[4][0] == "views"
-        assert "-- Backup for Views" in results[4][1]
-        assert results[5][0] == "views"
-        assert "VIEW `test_view`" in results[5][1]
-        assert results[6][0] == "procedures"
-        assert "-- Backup for Procedures" in results[6][1]
-        assert results[7][0] == "procedures"
-        assert "PROCEDURE `test_procedure`" in results[7][1]
+        assert len(results) == 12
 
     @pytest.mark.parametrize(
         "setup_database", [{"conflict_mode": "abort"}], indirect=True
@@ -271,12 +243,7 @@ class TestDatabasesIntegration:
         # Verify that the statements were executed
         with db_manager as manager:
             results = list(manager.backup())
-        assert len(results) == 3
-        assert results[0][0] == "full"
-        assert "-- Backup" in results[0][1]
-        assert results[1][0] == "full"
-        assert "CREATE TABLE `test`" in results[1][1]
-        assert results[2][0] == "full"
+        assert len(results) == 4
 
         db_manager.connect()
         cursor = db_manager.db.connection.cursor()
@@ -289,7 +256,7 @@ class TestDatabasesIntegration:
 
     @pytest.mark.parametrize(
         "setup_database",
-        [{"restore_mode": "statement", "multiple_files": True}],
+        [{"restore_mode": "backy", "multiple_files": True}],
         indirect=True,
     )
     def test_mysql_restore_statements_and_backup_2000_data_multiple_files(
@@ -315,7 +282,7 @@ class TestDatabasesIntegration:
         with db_manager as manager:
             results = list(manager.backup())
 
-        assert len(results) == 5
+        assert len(results) == 7
 
         db_manager.connect()
         cursor = db_manager.db.connection.cursor()

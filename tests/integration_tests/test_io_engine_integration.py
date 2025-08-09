@@ -49,7 +49,6 @@ class TestIOEngineIntegration:
             read_data = list(reader.read_stream())
 
         assert len(read_data) == 1
-        print(f"Read data: {read_data}")
         assert read_data[0][0] == feature_name
         assert read_data[0][1] == byte_data
         assert self.data_converter.convert_bytes_to_str(read_data[0][1]) == data

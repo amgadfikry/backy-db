@@ -72,18 +72,16 @@ class TestMetadataIntegration:
         creation_metadata = CreationMetadata(config=config)
         key_id = "backy_secret_key_1"
         version = "8.0.0"
-        object_key = "backy_object_key_1"
 
         # Generate metadata
         backup_metadata = creation_metadata.create_metadata_file(
-            version=version, key_id=key_id, object_key=object_key
+            version=version, key_id=key_id
         )
         assert backup_metadata is not None
         assert Path(backup_metadata).exists()
 
         # Extract metadata
         extraction_metadata = ExtractionMetadata()
-        print(f"Extracted metadata from: {extraction_metadata.metadata}")
 
         # Extract general metadata and verify
         general_metadata = extraction_metadata.get_general_metadata()
@@ -133,7 +131,7 @@ class TestMetadataIntegration:
         assert security_metadata["provider"] == "aws"
         assert security_metadata["key_size"] == 2048
         assert security_metadata["key_version"] == key_id.split("_")[-1]
-        assert security_metadata["encryption_file"] == f"{key_id}.enc"
+        assert security_metadata["encryption_file"] == f"backy_public_key_{key_id.split('_')[-1]}.enc"
 
         # Extract integrity metadata and verify
         integrity_metadata = extraction_metadata.get_integrity_metadata()
@@ -143,6 +141,5 @@ class TestMetadataIntegration:
         # Extract storage metadata and verify
         storage_metadata = extraction_metadata.get_storage_metadata()
         assert storage_metadata["storage_type"] == "aws"
-        assert storage_metadata["object_key"] == object_key
         assert storage_metadata["bucket_name"] == os.getenv("AWS_S3_BUCKET_NAME")
         assert storage_metadata["region"] == os.getenv("AWS_REGION")
