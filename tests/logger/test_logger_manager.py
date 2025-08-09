@@ -37,12 +37,12 @@ class TestLoggerManager:
         Test that a logger logs messages to a file.
         """
         logger = LoggerManager.setup_logger(name="file_test", log_file="mylogfile")
-        logger.info("Test log message")
+        logger.error("Test log message")
         log_file_path = Path(os.getenv("LOGGING_PATH")) / "mylogfile.log"
         assert log_file_path.exists()
         content = log_file_path.read_text()
         assert "Test log message" in content
-        assert "INFO" in content
+        assert "ERROR" in content
 
     def test_logger_level_respected(self):
         """
