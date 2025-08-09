@@ -1,5 +1,5 @@
 # tests/config_schemas.py/schemas/test_database_schema.py
-from config_schemas.schemas.database_schema import DatabaseSchema, MySQLFeaturesSchema
+from config_schemas.schemas.database_schema import DatabaseSchema, MySQLFeaturesSchema, DatabaseRestoreSchema
 import pytest
 
 
@@ -103,3 +103,47 @@ class TestDatabaseSchema:
                 events=False,
             )
         assert "At least one MySQL feature must be enabled." in str(exc_info.value)
+
+    def test_database_restore_schema_with_default_values(self):
+        """
+        Test DatabaseRestoreSchema with default values.
+        """
+        restore_schema = DatabaseRestoreSchema(
+            db_type="mysql",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            db_name="test_db",
+        )
+        assert restore_schema.db_type == "mysql"
+        assert restore_schema.host == "localhost"
+        assert restore_schema.port == 3306
+        assert restore_schema.user == "test_user"
+        assert restore_schema.db_name == "test_db"
+        assert restore_schema.features.tables is True
+        assert restore_schema.features.data is True
+        assert restore_schema.features.views is False
+
+    def test_database_restore_schema_with_empty_values(self):
+        """
+        Test DatabaseRestoreSchema with empty values.
+        """
+        with pytest.raises(ValueError) as exc_info:
+            DatabaseRestoreSchema()
+        assert "validation error" in str(exc_info.value)
+        assert "required" in str(exc_info.value)
+
+    def test_database_restore_schema_with_invalid_db_type(self):
+        """
+        Test DatabaseRestoreSchema with an invalid db_type.
+        """
+        with pytest.raises(ValueError) as exc_info:
+            DatabaseRestoreSchema(
+                db_type="invalid_db",
+                host="localhost",
+                port=3306,
+                user="test_user",
+                db_name="test_db",
+            )
+        assert "validation error" in str(exc_info.value)
+        assert "db_type" in str(exc_info.value)

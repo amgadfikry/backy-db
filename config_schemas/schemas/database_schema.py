@@ -92,3 +92,29 @@ class DatabaseSchema(BaseModel):
         description="Mode of restoration, either 'backy' or 'sql'.",
     )
     features: MySQLFeaturesSchema = Field(default_factory=MySQLFeaturesSchema)
+
+
+class DatabaseRestoreSchema(BaseModel):
+    """
+    Schema for restoring a MySQL database.
+    This schema defines the structure for restoring a MySQL database
+    from a backup file.
+    """
+
+    db_type: Literal["mysql"] = Field(
+        default="mysql",
+        description="Type of the database to restore.",
+        example="mysql",
+    )
+    host: str = Field(
+        ...,
+        description="Database host address.",
+        example="localhost",
+    )
+    port: int = Field(..., description="Database port number.", example=3306)
+    user: str = Field(..., description="Database user name.", example="root")
+    db_name: str = Field(..., description="Database name to restore.", example="my_database")
+    features: MySQLFeaturesSchema = Field(
+        default_factory=MySQLFeaturesSchema,
+        description="Features to restore for the MySQL database.",
+    )
