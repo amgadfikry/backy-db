@@ -1,6 +1,7 @@
 # config_schemas/validator.py
 from logger.logger_manager import LoggerManager
 from config_schemas.schemas.backup_schema import BackupSchema
+from config_schemas.schemas.restore_schema import RestoreSchema
 from typing import Union
 from pathlib import Path
 import yaml
@@ -22,6 +23,7 @@ class Validator:
 
     SCHEMAS = {
         "backup": BackupSchema,
+        "restore": RestoreSchema,
     }
 
     def __init__(self):
@@ -41,6 +43,28 @@ class Validator:
         config_data = self._validate_according_type(config, "backup")
         self._validate_environmental_variables(config_data)
         return config_data
+
+    def validate_restore(self, config: Union[str, Path, dict]) -> dict:
+        """
+        Validate restore configuration.
+        Args:
+            config (Union[str, dict]): File path or dict to validate.
+        Returns:
+            dict: Validated configuration data.
+        """
+        config_data = self._validate_according_type(config, "restore")
+        self._validate_environmental_variables(config_data)
+        return config_data
+    
+    def validate_restore_metadata(self, config: dict) -> None:
+        """
+        Validate restore metadata configuration.
+        This method checks for the presence of all required environmental variables
+        that are needed for restore operations.
+        Args:
+            config (dict): Configuration data to validate.
+        """
+        self._validate_environmental_variables(config)
 
     def _load_config_from_file(self, file_path: Path) -> dict:
         """

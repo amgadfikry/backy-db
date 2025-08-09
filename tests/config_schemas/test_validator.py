@@ -1,5 +1,4 @@
 # tests/config_schemas/test_validator.py
-from config_schemas.schemas.backup_schema import BackupSchema
 from config_schemas.validator import Validator
 import pytest
 import yaml
@@ -8,7 +7,6 @@ from pydantic import ValidationError
 
 
 class TestValidator:
-
     """
     Test cases for Validator class.
     This class contains tests to validate the Validator's functionality
@@ -26,11 +24,9 @@ class TestValidator:
                 "db_name": "test_db",
                 "user": "test_user",
                 "port": 3306,
-                "host": "localhost"
+                "host": "localhost",
             },
-            "storage": {
-                "storage_type": "local"
-            }
+            "storage": {"storage_type": "local"},
         }
         self.env_config = {
             "security": {
@@ -38,15 +34,12 @@ class TestValidator:
                 "type": "kms",
                 "provider": "aws",
                 "key_size": 2048,
-                "key_version": "v1"
+                "key_version": "v1",
             },
-            "integrity": {
-                "integrity_check": True,
-                "integrity_type": "checksum"
-            },
+            "integrity": {"integrity_check": True, "integrity_type": "checksum"},
             "storage": {
                 "storage_type": "local",
-            }
+            },
         }
 
     def test_load_config_from_yaml_file(self, tmp_path):
@@ -107,7 +100,9 @@ class TestValidator:
         Test validating a configuration dict against a schema.
         This test checks if the Validator can validate a dict correctly.
         """
-        validated_config = self.validator._validate_according_type(self.config_data, "backup")
+        validated_config = self.validator._validate_according_type(
+            self.config_data, "backup"
+        )
         assert isinstance(validated_config, dict)
         assert validated_config["database"]["db_type"] == "mysql"
         assert validated_config["storage"]["storage_type"] == "local"
@@ -119,7 +114,9 @@ class TestValidator:
         """
         file_path = tmp_path / "backup_config.json"
         file_path.touch()
-        mocker.patch.object(self.validator, '_load_config_from_file', return_value=self.config_data)
+        mocker.patch.object(
+            self.validator, "_load_config_from_file", return_value=self.config_data
+        )
         validated_config = self.validator._validate_according_type(file_path, "backup")
         assert isinstance(validated_config, dict)
         assert validated_config["database"]["db_type"] == "mysql"
@@ -132,8 +129,12 @@ class TestValidator:
         """
         file_path = tmp_path / "backup_config.json"
         file_path.touch()
-        mocker.patch.object(self.validator, '_load_config_from_file', return_value=self.config_data)
-        validated_config = self.validator._validate_according_type(str(file_path), "backup")
+        mocker.patch.object(
+            self.validator, "_load_config_from_file", return_value=self.config_data
+        )
+        validated_config = self.validator._validate_according_type(
+            str(file_path), "backup"
+        )
         assert isinstance(validated_config, dict)
         assert validated_config["backup"]["backup_type"] == "sql"
         assert validated_config["database"]["db_type"] == "mysql"
@@ -156,7 +157,7 @@ class TestValidator:
         """
         file_path = tmp_path / "empty_config.json"
         file_path.touch()
-        mocker.patch.object(self.validator, '_load_config_from_file', return_value={})
+        mocker.patch.object(self.validator, "_load_config_from_file", return_value={})
         with pytest.raises(ValueError) as exc_info:
             self.validator._validate_according_type(file_path, "backup")
         assert f"Config file {file_path} is empty or invalid." in str(exc_info.value)
@@ -176,8 +177,12 @@ class TestValidator:
         Test validating a backup configuration dict.
         This test checks if the Validator can validate a backup dict correctly.
         """
-        valid_mocker = mocker.patch.object(self.validator, '_validate_according_type', return_value=self.config_data)
-        env_mocker = mocker.patch.object(self.validator, '_validate_environmental_variables', return_value=None)
+        mocker.patch.object(
+            self.validator, "_validate_according_type", return_value=self.config_data
+        )
+        mocker.patch.object(
+            self.validator, "_validate_environmental_variables", return_value=None
+        )
         validated_config = self.validator.validate_backup(self.config_data)
         assert isinstance(validated_config, dict)
         assert validated_config["database"]["db_type"] == "mysql"
@@ -190,7 +195,9 @@ class TestValidator:
         """
         with pytest.raises(ValueError) as exc_info:
             self.validator._validate_environmental_variables(self.env_config)
-        assert "Required environmental variable DB_PASSWORD is not set." in str(exc_info.value)
+        assert "Required environmental variable DB_PASSWORD is not set." in str(
+            exc_info.value
+        )
 
     def test_validate_environmental_variables_all_required_keys_set(self, monkeypatch):
         """
@@ -269,7 +276,9 @@ class TestValidator:
         self.validator._validate_environmental_variables(self.env_config)
         assert True
 
-    def test_validate_environmental_variables_with_missing_integrity_password(self, monkeypatch):
+    def test_validate_environmental_variables_with_missing_integrity_password(
+        self, monkeypatch
+    ):
         """
         Test validating environmental variables with missing integrity password.
         This test checks if the Validator raises a ValueError for missing integrity password.
@@ -282,7 +291,9 @@ class TestValidator:
         self.env_config["integrity"]["integrity_type"] = "hmac"
         with pytest.raises(ValueError) as exc_info:
             self.validator._validate_environmental_variables(self.env_config)
-        assert "Required environmental variable INTEGRITY_PASSWORD is not set." in str(exc_info.value)
+        assert "Required environmental variable INTEGRITY_PASSWORD is not set." in str(
+            exc_info.value
+        )
 
     def test_validate_environmental_variables_with_aws_storage(self, monkeypatch):
         """
@@ -323,9 +334,13 @@ class TestValidator:
         self.env_config["storage"]["storage_type"] = "aws"
         with pytest.raises(ValueError) as exc_info:
             self.validator._validate_environmental_variables(self.env_config)
-        assert "Required environmental variable AWS_ACCESS_KEY_ID is not set." in str(exc_info.value)
+        assert "Required environmental variable AWS_ACCESS_KEY_ID is not set." in str(
+            exc_info.value
+        )
 
-    def test_validate_environmental_variables_with_missing_local_path(self, monkeypatch):
+    def test_validate_environmental_variables_with_missing_local_path(
+        self, monkeypatch
+    ):
         """
         Test validating environmental variables with missing local path.
         This test checks if the Validator raises a ValueError for missing local path.
@@ -337,5 +352,33 @@ class TestValidator:
         self.env_config["storage"]["storage_type"] = "local"
         with pytest.raises(ValueError) as exc_info:
             self.validator._validate_environmental_variables(self.env_config)
-        assert "Required environmental variable LOCAL_PATH is not set." in str(exc_info.value)
-    
+        assert "Required environmental variable LOCAL_PATH is not set." in str(
+            exc_info.value
+        )
+
+    def test_validate_restore_with_valid_dict(self, mocker):
+        """
+        Test validating a restore configuration dict.
+        This test checks if the Validator can validate a restore dict correctly.
+        """
+        mocker.patch.object(
+            self.validator, "_validate_according_type", return_value=self.config_data
+        )
+        mocker.patch.object(
+            self.validator, "_validate_environmental_variables", return_value=None
+        )
+        validated_config = self.validator.validate_restore(self.config_data)
+        assert isinstance(validated_config, dict)
+        assert validated_config["database"]["db_type"] == "mysql"
+        assert validated_config["storage"]["storage_type"] == "local"
+
+    def test_validate_restore_metadata_with_valid_dict(self, mocker):
+        """
+        Test validating restore metadata with a valid configuration dict.
+        This test checks if the Validator can validate restore metadata correctly.
+        """
+        mocker.patch.object(
+            self.validator, "_validate_environmental_variables", return_value=None
+        )
+        validated_config = self.validator.validate_restore_metadata(self.config_data)
+        assert True
