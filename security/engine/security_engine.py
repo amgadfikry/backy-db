@@ -1,4 +1,5 @@
 # security/engine/security_engine.py
+import os
 from pathlib import Path
 from security.engine.key_generator import KeyGenerator
 from security.engine.key_utils import KeyUtils
@@ -27,10 +28,11 @@ class SecurityEngine:
         self.provider = key_management_config.get("provider", "local")
         self.key_size = key_management_config.get("key_size", 4096)
         self.key_version = key_management_config.get("key_version", None)
-        self.encryption_file = key_management_config.get("encryption_file", None)
+        self.encryption_file = key_management_config.get("encryption_file", '')
         self.key_generator = KeyGenerator()
         self.key_utils = KeyUtils()
         self.manager = None
+        self.prcossiong_path = Path(os.getenv("MAIN_BACKUP_PATH"))
 
     def _assign_manager(self):
         """
@@ -148,7 +150,7 @@ class SecurityEngine:
         Returns:
             Tuple[bytes, bytes]: The decrypted symmetric key and the encrypted symmetric key.
         """
-        encrypted = self.key_utils.read_encryption_file(Path(self.encryption_file))
+        encrypted = self.key_utils.read_encryption_file(self.prcossiong_path / self.encryption_file)
         symmetric = self._decrypt_symmetric_key(key_id, encrypted)
         return symmetric, encrypted
 
@@ -170,18 +172,14 @@ class SecurityEngine:
             self._assign_manager()
             # step 2: Generate a unique key identifier with a check for its existence
             existing, key_id, key_identifier = self._generate_key_id_and_check_it()
-            print(
-                f"existing : {existing}, Key ID: {key_id}, Key Identifier: {key_identifier}"
-            )
+
             # step 3: Check if the keys not exist
             if not existing:
                 # step 4: Generate the private keys if they do not exist
                 self._generate_private_keys(key_id)
             # step 5: Retrieve the public key associated with the key_id
             public_key = self._get_public_key(key_id)
-            print(f"Public Key: {public_key}")
             # step 6: if there is no encryption file, generate a symmetric key and encrypt it
-            print(f"Encryption File: {self.encryption_file}")
             if not self.encryption_file:
                 symmetric, encrypted = self._handle_new_symmetric_key(public_key)
                 return symmetric, encrypted, key_identifier
