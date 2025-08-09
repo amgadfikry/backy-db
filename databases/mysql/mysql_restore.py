@@ -50,6 +50,7 @@ class MySQLRestore:
             cursor (mysql.connector.cursor): The MySQL cursor to execute the command.
             statement (str): The SQL statement to execute.
         """
+        statement = MySQLUtils().clean_single_sql_statement(statement)
         self.execute_with_conflict_handling(cursor, statement)
 
     def execute_with_conflict_handling(
@@ -67,7 +68,12 @@ class MySQLRestore:
             RuntimeError: If any error occurs during the execution.
         """
         try:
+            if not statement.strip():
+                self.logger.warning("Empty statement, skipping execution.")
+                return
             cursor.execute(statement)
+            while cursor.nextset():
+                pass
         except mysql.connector.Error as e:
             if self.conflict == "skip":
                 self.logger.warning(f"Conflict occurred: {e}. Skipping statement.")
