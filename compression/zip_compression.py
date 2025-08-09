@@ -40,7 +40,7 @@ class ZipCompression(CompressionBase):
             with zipfile.ZipFile(compressed_folder, "w", zipfile.ZIP_DEFLATED) as zipf:
                 for file in folder_path.rglob("*"):
                     if file.is_file():
-                        arcname = Path(folder_path.name) / file.relative_to(folder_path)
+                        arcname = file.relative_to(folder_path)
                         zipf.write(file, arcname=arcname)
 
             # Remove the original folder after compression

@@ -40,7 +40,8 @@ class TarCompression(CompressionBase):
             )
             # Compress the folder into a tar file
             with tarfile.open(compressed_folder_name, "w") as tarf:
-                tarf.add(folder_path, arcname=folder_path.name)
+                for file in folder_path.rglob("*"):
+                    tarf.add(file, arcname=file.relative_to(folder_path))
             # Log the successful creation of the tar file and delete the original folder
             self.logger.info(f"Successfully created tar file: {compressed_folder_name}")
             delete_folder(folder_path)
