@@ -55,15 +55,19 @@ class MySQLManager(DatabaseBase):
                 port=self.port,
                 user=self.user,
                 password=self.password,
-                database=self.db_name,
             )
 
             # Set the version of mysql
             self.version = self.connection.server_info
 
+            cursor = self.connection.cursor()
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.db_name};")
+            cursor.execute(f"USE {self.db_name};")
+            cursor.close()
             self.logger.info(
                 f"Connected to MySQL database successfully: version {self.version}"
             )
+
         except Exception as e:
             self.logger.error(f"Failed to connect to MySQL database: {e}")
             raise ConnectionError(f"Failed to connect to MySQL database: {e}")
@@ -92,7 +96,8 @@ class MySQLManager(DatabaseBase):
 
         # If not multiple_files, create the opening SQL statements only once
         if not self.multiple_files:
-            yield "full", MySQLUtils.create_mysql_file_opening(self.db_name)
+            yield "full", f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`;\n"
+            yield "full", f"USE {self.db_name};\n\n"
 
         cursor = self.connection.cursor()
         # Filter out features that are not enabled
@@ -103,9 +108,8 @@ class MySQLManager(DatabaseBase):
 
             # If multiple_files is True, create the opening SQL statements for each feature
             if self.multiple_files:
-                yield feature, MySQLUtils.create_mysql_file_opening(
-                    self.db_name
-                ) + f"-- Backup for {feature.capitalize()}\n\n"
+                yield feature, f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`;\n"
+                yield feature, f"USE {self.db_name};\n\n"
 
             self.logger.info(f"Starting backup for {feature}...")
             # Call the method to yield the SQL statements for the feature
@@ -138,11 +142,11 @@ class MySQLManager(DatabaseBase):
             self.logger.info(f"Skipping restore for {feature} as it is not active.")
             return
         try:
-            # If the restore mode is 'file', restore from the file
-            if self.restore_mode == "file":
+            # If the restore mode is 'sql', restore from the file
+            if self.restore_mode == "sql":
                 self.restoring.restore_file(cursor, data)
-            # If the restore mode is 'statement', restore from the statement
-            elif self.restore_mode == "statement":
+            # If the restore mode is 'backy', restore from the statement
+            elif self.restore_mode == "backy":
                 self.restoring.restore_statement(cursor, data)
             # If the restore mode is not implemented, raise an error
             else:
