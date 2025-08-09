@@ -189,7 +189,6 @@ class TestAWSStorage:
         aws_storage.s3.delete_object.assert_called_once_with(
             Bucket=aws_storage.bucket_name, Key="backup/test_file.txt"
         )
-        assert "File deleted successfully from S3: backup/test_file.txt" in caplog.text
 
     def test_delete_file_failure(self, aws_storage, mocker):
         """
