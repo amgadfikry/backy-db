@@ -22,11 +22,6 @@ class IOCreator:
             backup_type (str): The type of backup that this file creator will handle.
         """
         self.logger = LoggerManager.setup_logger("io_engine")
-        if backup_type not in ["backy", "sql"]:
-            self.logger.error(
-                f"Invalid backup type: {backup_type}. Must be 'backy' or 'sql'."
-            )
-            raise ValueError("Invalid backup type. Must be 'backy' or 'sql'.")
         self.backup_type = backup_type
         self.db_name = db_name
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -54,7 +49,7 @@ class IOCreator:
             Path: The path to the created file.
         """
         try:
-            file_name = f"{self.db_name}_{feature_name}_{self.timestamp}_backup.{ext}"
+            file_name = f"{feature_name}_{self.db_name}_{self.timestamp}_backup.{ext}"
             file_path = Path(self.processing_path) / file_name
             file_path.touch()
             self.logger.info(f"{ext.upper()} file created: {file_path}")
@@ -62,6 +57,23 @@ class IOCreator:
         except Exception as e:
             self.logger.error(f"Error creating {ext.upper()} file: {e}")
             raise RuntimeError(f"Failed to create {ext.upper()} file") from e
+
+    def create_encryption_file(self, data: bytes, name: str) -> Path:
+        """
+        Create an encryption file for the backup.
+        Args:
+            data (bytes): The data to be encrypted and written to the file.
+            name (str): The name of the encryption file.
+        Returns:
+            Path: The path to the created encryption file.
+        """
+        encryption_file = (
+            self.processing_path / f"backy_public_key_{name.split('_')[-1]}.enc"
+        )
+        with encryption_file.open("wb") as f:
+            f.write(data)
+        self.logger.info(f"Encryption file created: {encryption_file}")
+        return encryption_file
 
     def _generate_main_backup_path(self) -> Path:
         """
