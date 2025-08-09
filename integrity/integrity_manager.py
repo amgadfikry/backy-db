@@ -34,7 +34,7 @@ class IntegrityManager:
         """
         return self.integrity_service.create_integrity()
 
-    def verify_integrity(self, integrity_file: Path) -> bool:
+    def verify_integrity(self) -> bool:
         """
         Verify the integrity of files using the specified integrity service.
         Args:
@@ -42,4 +42,4 @@ class IntegrityManager:
         Returns:
             bool: True if integrity is verified, False otherwise.
         """
-        return self.integrity_service.verify_integrity(integrity_file)
+        return self.integrity_service.verify_integrity()

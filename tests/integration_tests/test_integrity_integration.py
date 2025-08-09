@@ -36,7 +36,7 @@ class TestIntegrityIntegration:
             assert self.files[0].name in content
             assert self.files[1].name in content
 
-        is_valid = self.integrity_manager.verify_integrity(integrity_file)
+        is_valid = self.integrity_manager.verify_integrity()
         assert is_valid is True
 
     def test_verify_integrity_with_tempered_file(self):
@@ -49,7 +49,7 @@ class TestIntegrityIntegration:
         # Temper the first file
         self.files[0].write_text("This file has been tempered.")
 
-        is_valid = self.integrity_manager.verify_integrity(integrity_file)
+        is_valid = self.integrity_manager.verify_integrity()
         assert is_valid is False
 
     def test_verify_integrity_with_tempered_integrity_file(self):
@@ -63,7 +63,7 @@ class TestIntegrityIntegration:
         with open(integrity_file, "a") as f:
             f.write("tempered_checksum  tempered_file.txt\n")
 
-        is_valid = self.integrity_manager.verify_integrity(integrity_file)
+        is_valid = self.integrity_manager.verify_integrity()
         assert is_valid is False
 
     def test_verify_integrity_with_different_password(self, integrity_type):
@@ -79,5 +79,5 @@ class TestIntegrityIntegration:
         os.environ["INTEGRITY_PASSWORD"] = "different_password"
         new_integrity_manager = IntegrityManager(integrity_type)
 
-        is_valid = new_integrity_manager.verify_integrity(integrity_file)
+        is_valid = new_integrity_manager.verify_integrity()
         assert is_valid is False

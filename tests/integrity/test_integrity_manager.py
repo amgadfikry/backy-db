@@ -34,10 +34,9 @@ class TestIntegrityManager:
         Test the verify_integrity method of IntegrityManager
         """
         integrity_file = mocker.Mock()
-        result = self.integrity_manager.verify_integrity(integrity_file)
+        result = self.integrity_manager.verify_integrity()
         assert result is not None
         assert self.hmac_mocker.verify_integrity.called
-        assert self.hmac_mocker.verify_integrity.call_args[0][0] == integrity_file
 
     def test_invalid_integrity_type(self):
         """

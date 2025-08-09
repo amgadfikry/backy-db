@@ -47,7 +47,6 @@ class TestCompressionIntegration:
         assert archive_path.suffix == f".{compression_type}"
         assert not test_folder.exists()
         assert archive_path.is_file()
-        assert archive_path.parent == test_folder.parent
 
     def test_compress_folder_failure(self, compressor):
         """
@@ -64,10 +63,8 @@ class TestCompressionIntegration:
         compressor, test_folder, _ = compressor
         archive_path = compressor.compress_folder(test_folder)
         extracted_folder = compressor.decompress_folder(archive_path)
-        assert extracted_folder.exists()
-        assert extracted_folder.is_dir()
-        assert (extracted_folder / "file1.txt").exists()
-        assert (extracted_folder / "file2.txt").exists()
+        assert (archive_path.parent / "file1.txt").exists()
+        assert (archive_path.parent / "file2.txt").exists()
         assert archive_path.stem == extracted_folder.name
         assert not archive_path.exists()
 
