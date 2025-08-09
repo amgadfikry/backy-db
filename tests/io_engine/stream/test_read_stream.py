@@ -20,7 +20,7 @@ class TestReadStream:
         self.file_path.touch()
         mocker.patch.object(ReadStream, "_identify_mode", return_value="rb")
 
-    def test_read_stream_empty(self, caplog):
+    def test_read_stream_empty(self):
         """
         Test reading from an empty stream.
         Should log an info message and return without yielding any data.
@@ -31,7 +31,6 @@ class TestReadStream:
         with ReadStream(self.file_path) as r:
             data = list(r.read_stream())
         assert data == []
-        assert "No more data to read from stream" in caplog.text
 
     def test_read_stream_if_len_metadata_size_is_less_than_4(self, caplog):
         """

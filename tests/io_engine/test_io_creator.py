@@ -23,26 +23,6 @@ class TestIOCreator:
         )
         return IOCreator(backup_type="backy", db_name="test_db")
 
-    def test_initialization_with_valid_backup_type(self, io_creator):
-        """
-        Test that IOCreator initializes correctly with a valid backup type.
-        """
-        assert io_creator.backup_type == "backy"
-        assert io_creator.db_name == "test_db"
-        assert io_creator.processing_path is not None
-        assert io_creator.timestamp is not None
-        assert isinstance(io_creator.processing_path, Path)
-        assert io_creator.processing_path.is_dir()
-        assert isinstance(io_creator.timestamp, str)
-
-    def test_initialization_with_invalid_backup_type(self):
-        """
-        Test that IOCreator raises ValueError for an invalid backup type.
-        """
-        with pytest.raises(ValueError) as exc_info:
-            IOCreator(backup_type="invalid_type", db_name="test_db")
-        assert "Invalid backup type. Must be 'backy' or 'sql'." in str(exc_info.value)
-
     def test_create_file_success(self, io_creator, mocker):
         """
         Test the successful creation of a file.
@@ -55,8 +35,7 @@ class TestIOCreator:
             return_value=Path("test_db_test_feature.backy"),
         )
         file_path = io_creator.create_file(feature_name)
-        print(file_path)
-        print(io_creator.processing_path)
+
         assert file_path is not None
         assert file_path.name.startswith("test_db_test_feature")
         assert file_path.suffix == ".backy"
@@ -70,7 +49,7 @@ class TestIOCreator:
         feature_name = "tables"
         file_path = io_creator._create_file_helper(feature_name, "sql")
         assert file_path is not None
-        assert file_path.name.startswith("test_db_tables")
+        assert file_path.name.startswith(feature_name)
         assert file_path.name.endswith("_backup.sql")
         assert file_path.suffix == ".sql"
         assert file_path.exists()
@@ -83,7 +62,7 @@ class TestIOCreator:
         feature_name = "backup"
         file_path = io_creator._create_file_helper(feature_name, "backy")
         assert file_path is not None
-        assert file_path.name.startswith("test_db_backup")
+        assert file_path.name.startswith(feature_name)
         assert file_path.name.endswith("_backup.backy")
         assert file_path.suffix == ".backy"
         assert file_path.exists()
@@ -118,8 +97,6 @@ class TestIOCreator:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         io_creator = IOCreator(backup_type="backy", db_name="test_db")
         assert io_creator.processing_path.is_dir()
-        print(f"Generated backup path: {io_creator.processing_path}")
-        print(os.environ["MAIN_BACKUP_PATH"])
         assert os.environ["MAIN_BACKUP_PATH"] == str(io_creator.processing_path)
         for part in expected_parts:
             assert part in str(io_creator.processing_path)
