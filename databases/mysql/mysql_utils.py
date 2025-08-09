@@ -104,3 +104,49 @@ class MySQLUtils:
 
         except Exception as e:
             raise ValueError(f"Error processing SQL file: {e}") from e
+
+    def clean_single_sql_statement(self, sql: str) -> str:
+        """
+        Clean a single SQL statement string:
+            - Removes single-line comments (-- ...)
+            - Removes multi-line comments (/* ... */)
+            - Removes DELIMITER lines
+            - Strips trailing delimiter (; or custom)
+        """
+        delimiter = ";"
+        inside_block_comment = False
+        current = []
+
+        for raw_line in sql.splitlines():
+            line = raw_line.strip()
+
+            if inside_block_comment:
+                if "*/" in line:
+                    inside_block_comment = False
+                continue
+            if line.startswith("/*"):
+                if "*/" not in line:
+                    inside_block_comment = True
+                continue
+
+            if not line or line.startswith("--"):
+                continue
+
+            if line.upper().startswith("DELIMITER"):
+                parts = line.split()
+                if len(parts) > 1:
+                    delimiter = parts[1]
+                continue
+
+            if line == delimiter:
+                continue
+
+            current.append(raw_line.rstrip("\n"))
+
+        statement = "\n".join(current).strip()
+
+        # Strip trailing delimiter only if it matches the current one
+        if statement.endswith(delimiter):
+            statement = statement[: -len(delimiter)].strip()
+
+        return statement
