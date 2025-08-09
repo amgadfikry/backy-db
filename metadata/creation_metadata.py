@@ -128,13 +128,15 @@ class CreationMetadata:
             dict: A dictionary containing the security metadata.
         """
         security_data = self.config.get("security", {})
+        version = key_id.split("_")[-1] if key_id else None
+        enc_file_name = f"backy_public_key_{version}.enc" if version else None
         security = {
             "encryption": security_data.get("encryption", False),
             "type": security_data.get("type", "keystore"),
             "provider": security_data.get("provider"),
             "key_size": security_data.get("key_size"),
-            "key_version": key_id.split("_")[-1] if key_id else None,
-            "encryption_file": f"{key_id}.enc" if key_id else None,
+            "key_version": version,
+            "encryption_file": enc_file_name,
         }
         return security
 
@@ -152,13 +154,10 @@ class CreationMetadata:
         }
         return integrity
 
-    def generate_storage_metadata(self, object_key: str) -> dict:
+    def generate_storage_metadata(self) -> dict:
         """
         Generate metadata for the storage settings.
-        This includes information about the storage type, object key,
-        bucket name, and region.
-        Args:
-            object_key (str): The key for the object in storage.
+        This includes information about the storage type, bucket name, and region.
         Returns:
             dict: A dictionary containing the storage metadata.
         """
@@ -168,21 +167,17 @@ class CreationMetadata:
         region = os.getenv("AWS_REGION") if storage_type == "aws" else None
         storage = {
             "storage_type": storage_type,
-            "object_key": object_key,
             "bucket_name": bucket_name,
             "region": region,
         }
         return storage
 
-    def generate_full_metadata(
-        self, version: str, key_id: str, object_key: str
-    ) -> dict:
+    def generate_full_metadata(self, version: str, key_id: str) -> dict:
         """
         Generate full metadata for the creation process.
         Args:
             version (str): The version of the database.
             key_id (str): The unique identifier for the key.
-            object_key (str): The key for the object in storage.
         Returns:
             dict: A dictionary containing all metadata.
         """
@@ -193,21 +188,20 @@ class CreationMetadata:
             "compression": self.generate_compression_metadata(),
             "security": self.generate_security_metadata(key_id),
             "integrity": self.generate_integrity_metadata(),
-            "storage": self.generate_storage_metadata(object_key),
+            "storage": self.generate_storage_metadata(),
         }
         return metadata
 
-    def create_metadata_file(self, version: str, key_id: str, object_key: str) -> str:
+    def create_metadata_file(self, version: str, key_id: str) -> str:
         """
         Create a metadata file with the generated metadata.
         Args:
             version (str): The version of the database.
             key_id (str): The unique identifier for the key.
-            object_key (str): The key for the object in storage.
         Returns:
             str: The path to the created metadata file.
         """
-        metadata = self.generate_full_metadata(version, key_id, object_key)
+        metadata = self.generate_full_metadata(version, key_id)
         db_name = self.config.get("database", {}).get("db_name")
         metadata_name = f"{db_name}_{self.timestamp}_metadata.backy.json"
         metadata_file_path = Path(self.processing_path) / metadata_name
