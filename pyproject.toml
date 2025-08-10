@@ -4,9 +4,9 @@
 
 name = "backy-db"
 version = "0.1.0"
-description = "Modular backup and restore system"
+description = Modular, secure database backup and restore system with MySQL support"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Amgad Fikry Mohamed", email = "dr.amgad_sh92@yahoo.com" }]
 dependencies = [
@@ -15,7 +15,7 @@ dependencies = [
     "python-dotenv",
     "mysql-connector-python",
     "sqlparse",
-    "PyYAML"
+    "cryptography>=42.0.0"
 ]
 
 [project.optional-dependencies]
