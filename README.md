@@ -15,6 +15,7 @@ A modular backup and restore system designed to provide flexible, secure, and ef
   - [Minimum Required Backup Configuration Example](#minimum-required-backup-configuration-example)
   - [Full Backup Configuration Example](#full-backup-configuration-example)
   - [Restore Configuration Example](#restore-configuration-example)
+  - [Environment Variables](#environment-variables)
   - [Basic Example](#basic-example)
   - [Configuration Options](#configuration-options)
 - [Tests](#tests)
@@ -182,6 +183,67 @@ backup.
 }
 ```
 
+### Environment Variables
+
+BackyDB supports optional and required environment variables depending on the selected configuration.
+
+- Required Variables (always required)
+
+    ```bash
+    DB_PASSWORD=root
+    LOGGING_PATH=/path/to/logs
+    ```
+
+- Conditional Variables
+
+    - If encryption is enabled:
+
+        ```bash
+        PRIVATE_KEY_PASSWORD=private_key_password
+        ```
+
+    - If using Local Key Store encryption:
+
+        ```bash
+        LOCAL_KEY_STORE_PATH=/path/to/keys
+        ```
+
+    - Google Key Store encryption:
+
+        ```bash
+        GOOGLE_APPLICATION_CREDENTIALS=/path/to/gcp/credentials.json
+        GCP_PROJECT_ID=my-gcp-project
+        ```
+
+    - If using AWS KMS encryption:
+
+        ```bash
+        AWS_ACCESS_KEY_ID=your-access-key
+        AWS_SECRET_ACCESS_KEY=your-secret-key
+        AWS_REGION=your-region
+        ```
+
+    - If using Integrity with HMAC type:
+
+        ```bash
+        INTEGRITY_PASSWORD=integrity_password
+        ```
+
+    - If using Local storage:
+
+        ```bash
+        LOCAL_PATH=/path/to/local/storage
+        ```
+
+    - If using AWS S3 storage:
+
+        ```bash
+        AWS_S3_ACCESS_KEY_ID=your-access-key
+        AWS_S3_SECRET_ACCESS_KEY=your-secret-key
+        AWS_S3_BUCKET_NAME=your-bucket-name
+        AWS_S3_REGION=your-region
+        ```
+
 ### Notes
 
 - You can customize which database features to backup or restore by enabling/disabling options under **features**.
@@ -330,6 +392,22 @@ BackyDB includes a comprehensive test suite to ensure code quality and reliabili
     ```
 
 If you want, I can help add instructions for Docker or environment setup related to tests next.
+
+## Future Features
+
+- Support for additional database engines (PostgreSQL and MongoDB)
+- Support for additional cloud storage options (GCP, Azure, Oracle)
+- Support for additional compression algorithms
+- Support for additional key store and KMS providers
+- Command-line interface (CLI) support
+- Real-time backup monitoring dashboard
+- Direct secure database migration
+- Incremental backups with version control
+- Conflict resolution options for restore
+- Security key rotation
+- Schema conversion between different database engines
+- Backup and restore history logging
+- Scheduled backups via CRON jobs
 
 ## Contributing
 
