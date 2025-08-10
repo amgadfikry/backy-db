@@ -21,6 +21,7 @@ A modular backup and restore system designed to provide flexible, secure, and ef
 - [Tests](#tests)
   - [Running Tests](#running-tests)
 - [Development Helpers](#development-helpers)
+- [Future Features](#future-features)
 - [Contributing](#contributing)
 - [License](#license)
 
