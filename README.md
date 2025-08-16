@@ -426,3 +426,5 @@ For any questions or discussions, feel free to open an issue or join the communi
 ## License
 
 BackyDB is licensed under the MIT License.
+
+Idea of the project from: https://roadmap.sh/projects/database-backup-utility
